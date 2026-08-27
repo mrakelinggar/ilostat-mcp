@@ -1,0 +1,262 @@
+# ILOSTAT MCP — CLAUDE.md
+
+Model Context Protocol server exposing ILOSTAT employment and wage data to AI
+agents, with methodology-break detection and a hallucination benchmark as its
+core differentiators. Built by Rake Kanza as a portfolio project targeting
+senior data/AI engineering roles and funded PhD applications.
+
+---
+
+## Working principles (non-negotiable, apply to every response and every line of code)
+
+1. **KISS / DRY / good engineering practice, always.**
+   - No speculative abstraction — build for the tool list that exists today,
+     not for imagined future requirements.
+   - No duplicated logic across files. If the same calculation or query shape
+     appears twice, extract it.
+   - Prefer the boring, obvious solution over the clever one. This is a
+     portfolio project — a reviewer reading the code should immediately
+     understand it, not have to reverse-engineer cleverness.
+   - Every function does one thing. If a function needs "and" to describe it,
+     split it.
+
+2. **Answer succinctly, without preamble, without sacrificing accuracy.**
+   - No restating the question. No "Great question!" No filler.
+   - Lead with the answer. Add only the context needed to trust or use it.
+   - Succinct is not the same as incomplete — never trade correctness for
+     brevity. If a short answer would mislead, say the longer thing.
+
+3. **Write notes and logs in plain English, short and simple.**
+   - Explain what something *means*, not just what it *is*. "SOURCE attribute diff"
+     is a label; "the survey source changed mid-series, so the numbers aren't
+     comparable" is an explanation. Use the latter.
+   - No jargon without a plain-English gloss the first time it appears.
+   - A future reader of `local-notes/` should understand a finding without
+     needing to re-run the discovery script or read the SDMX spec.
+   - This applies to `log.md` entries, `discovery_results.md`, `ROADMAP.md`,
+     and any other file in `local-notes/`. Code comments follow the project-wide
+     "no obvious comments" rule — this rule is for prose documentation only.
+   - **Every file in `local-notes/plan/` must open with a plain-English "what
+     and why" section** — 2–4 sentences explaining what this phase/discovery
+     does and why it matters (what decision it enables, or what would go wrong
+     without it). This comes before any unknowns, tasks, or technical detail.
+   - **Every unknown/question in a plan file must also include a plain-English
+     "what and why"** — one sentence on what is being tested, one on why it
+     matters (what breaks or stays unknown if we skip it). Technical details
+     follow after, not instead of, this explanation.
+
+4. **Never guess. If unsure, search. If nothing reliable turns up, say so.**
+   - This applies to library APIs, ILOSTAT's SDMX behavior, MCP spec details,
+     and Anthropic/Claude product facts equally.
+   - Do not fabricate ILOSTAT data values, dataflow IDs, or country coverage —
+     verify against the live API or documentation before stating them as fact.
+   - "I don't know, and couldn't find a reliable source" is an acceptable
+     answer. A confident wrong answer is not.
+
+---
+
+## Locked scope and decisions (do not silently re-litigate these)
+
+| Decision | Value |
+|---|---|
+| Language | Python |
+| MCP framework | FastMCP |
+| SDMX transport | `sdmx1` (has a built-in, actively maintained `ILO` source — do not hand-roll SDMX parsing) |
+| Data domain | ILOSTAT only, **employment + wages** themes for v1 (not the full ILOSTAT catalog) |
+| Analytical depth | Derived stats: YoY change, CAGR, trend. Not pure pass-through, not full statistical modeling. |
+| Data storage | None — every call hits ILOSTAT's live SDMX API. No local snapshot, no database. |
+| Distribution | Local install via `pip`/`uvx`, no hosted remote server for v1 |
+| Verbosity/reasoning exposure | Rely on the MCP client's native tool-call panel (Claude Desktop, etc.). No custom `explain` flag or server-side reasoning field — deferred to v2 if ever. |
+| Differentiators (v1 scope, both required) | (1) Methodology-break detection, (2) hallucination benchmark comparing bare-LLM vs. MCP-equipped agent |
+
+If a change to any of these is proposed mid-build, flag it explicitly as a
+scope change before proceeding — don't drift.
+
+---
+
+## Local notes (source of truth for planning — never committed)
+
+```
+local-notes/
+├── log.md              # daily log — what was worked on each session, dated entries
+├── plan/                # analysis & discovery — decisions, research, design docs
+│   ├── ROADMAP.md       # overall phased implementation plan (global, top-level)
+│   └── phase00/         # one folder per phase — pre-build plans, design docs
+│       └── phase_0c_plan.md
+└── execution/           # phase-by-phase implementation tracking
+    └── phase00/         # one folder per phase — results, learnings, blockers, updates
+        ├── code/            # all scripts for this phase (scratch_*.py, etc.)
+        │   ├── phase0a_scratch_discovery.py
+        │   └── phase0b_scratch.py
+        ├── phase0a_results.md
+        └── phase0b_results.md
+```
+
+**Directory naming rule:** phases are numbered with two zero-padded digits —
+`phase00`, `phase01`, `phase02`, etc. Sub-phases (0a, 0b, 0c) are not separate
+directories; they live inside the same `phase00/` folder in both `plan/` and
+`execution/`. A new top-level directory is only created when the phase number
+increments (Phase 0 → Phase 1 = `phase00/` → `phase01/`).
+
+**File naming rule:** every file in `execution/phaseXX/` must be prefixed with
+its sub-phase — `phase0a_`, `phase0b_`, etc. — so the sub-phase is immediately
+obvious from the filename without opening the file. Scripts go in a `code/`
+subfolder; result/findings docs sit directly in `phaseXX/`. Example layout:
+`execution/phase00/code/phase0b_scratch.py`, `execution/phase00/phase0b_results.md`.
+
+`plan/` is where thinking happens before you build — the roadmap, design
+decisions, research notes. `execution/` is the after-the-fact record of what
+actually happened per phase — results, learnings, blockers. Keep these
+separate; don't let implementation notes drift back into `plan/`.
+
+This folder is the source of truth for project state and decisions — check it
+before starting a session, update it before ending one. `log.md` gets a dated
+entry every working session, even a short one ("2026-07-23: scaffolded
+sdmx_client.py, confirmed sdmx1 pulls a real ILOSTAT employment series").
+
+`local-notes/` (covering both `plan/` and `execution/`) and `CLAUDE.md` are
+both git-ignored (see below) — they never get committed, regardless of
+whether the repo is private or later made public.
+
+---
+
+## Repo setup
+
+- Private GitHub repo (`ilostat-mcp`), created locally already.
+- `.gitignore` must include:
+  ```
+  CLAUDE.md
+  local-notes/
+  ```
+- GitHub has no per-file visibility control within one repo — visibility is
+  repo-level only. `.gitignore` is how `CLAUDE.md`/`local-notes/` stay fully
+  local and untracked, independent of whether the repo itself is private now
+  or made public later.
+
+---
+
+## Architecture
+
+```
+ilostat-mcp/
+├── src/ilostat_mcp/
+│   ├── server.py          # FastMCP instance, tool registration — thin, no business logic
+│   ├── sdmx_client.py     # ONLY file that imports sdmx1. Returns plain pandas
+│   │                      # DataFrames/dicts to the rest of the codebase — sdmx1
+│   │                      # specifics never leak past this file.
+│   ├── indicators.py      # Registry mapping theme name -> dataflow ID(s).
+│   │                      # Adding a new theme = adding entries here only.
+│   ├── breaks.py          # Methodology-break detection (SOURCE attribute diff,
+│   │                      # OBS_PRE_BREAK_VALUE check) — see "Break detection" below
+│   ├── analysis/
+│   │   ├── growth.py      # yoy(), cagr(), trend() — pure functions, unit-testable
+│   │   └── __init__.py    # future analysis functions register here
+│   └── resources.py       # system-prompt resource, codelist caching
+├── tests/
+│   ├── test_sdmx_client.py
+│   ├── test_analysis.py   # verify math against hand-calculated cases, not just
+│   │                      # "does it run"
+│   └── test_breaks.py
+├── benchmark/
+│   ├── BENCHMARK_SCHEMA.md
+│   ├── benchmark_questions.json   # ground truth filled in by hand, never guessed
+│   └── run_benchmark.py           # scores bare_llm / mcp_full / mcp_no_breakcheck
+├── pyproject.toml
+├── README.md
+└── smithery.yaml
+```
+
+**Growth rule:** new indicator theme -> edit `indicators.py` only. New analysis
+function -> add to `analysis/`, register one new tool in `server.py`. Never let
+`sdmx1`-specific code appear outside `sdmx_client.py`.
+
+---
+
+## Tool list (v1)
+
+| Tool | Purpose |
+|---|---|
+| `search_indicators(keyword)` | Find relevant dataflows by keyword — ILOSTAT dataflow IDs act as filters (per-country/age/sex), not a flat indicator list, so this must search titles/descriptions, not assume a clean taxonomy |
+| `get_countries()` | List valid country codes from `CL_AREA` |
+| `get_indicator_metadata(dataflow_id)` | Definition, units, source, last updated |
+| `get_time_series(dataflow_id, country, start, end)` | Raw data pull. Always includes a `_breaks` field (see below) — not opt-in |
+| `get_yoy_change(dataflow_id, country, year)` | Derived: year-over-year % change |
+| `get_cagr(dataflow_id, country, start, end)` | Derived: CAGR. Must warn or refuse if the range spans a detected break |
+| `get_trend(dataflow_id, country, start, end)` | Derived: linear trend + slope. Same break-spanning rule as CAGR |
+
+## Resources
+
+- `ilostat://system-prompt` — correct call order (search -> metadata -> data ->
+  derived stat); instructs the agent to never invent a number on empty results
+- `ilostat://codelists/area`, `ilostat://codelists/indicator` — cached reference data
+
+## Prompts
+
+- `labor_market_snapshot(country)` — chains search + fetch + YoY/trend into one
+  packaged workflow
+
+---
+
+## Break detection (core differentiator #1)
+
+Every `get_time_series` call runs break detection automatically:
+
+1. **SOURCE attribute diff** — compare consecutive observations' `SOURCE`
+   attribute (e.g. "LFS – Labour Force Survey" vs. an administrative-records
+   source); a change flags a methodology break at that point
+2. **`OBS_PRE_BREAK_VALUE`** — SDMX's own standard mechanism for flagging a
+   break, when ILOSTAT populates it
+
+`get_cagr` and `get_trend` must check for breaks inside the requested range
+before computing, and either warn in the response or refuse — silently
+computing a trend across a break is treated as a correctness bug, not a
+missing nice-to-have.
+
+---
+
+## Hallucination benchmark (core differentiator #2)
+
+Full methodology lives in `benchmark/BENCHMARK_SCHEMA.md` and
+`benchmark/benchmark_questions.json`. Summary:
+
+- ~30-40 questions across 6 categories: `answerable_clean`,
+  `answerable_break`, `unanswerable_no_data`, `unanswerable_wrong_entity`,
+  `ambiguous`, `comparative`
+- Ground truth pulled by hand from live ILOSTAT before any benchmark run —
+  never fabricated, never inferred. (Ground-truth filling may be delegated to
+  someone else running queries against the live client/ILOSTAT site — the
+  rule still holds: verified real values only, no guessing.)
+- 3 conditions tested: `bare_llm`, `mcp_full`, `mcp_no_breakcheck` (isolates
+  the specific contribution of break detection vs. tool access alone)
+- Scored on: fabrication rate, break-blindness rate, abstention accuracy,
+  false-abstention rate
+- Results reported as a plain table in the README — no editorializing beyond
+  the numbers
+
+---
+
+## Showcase plan (for context, not code-affecting, but keep in mind when naming/logging things)
+
+- Written article (TDS/Dev.to) published first, video second, video points to
+  article and repo
+- Video: problem-first hook -> live query (default, tool-calls collapsed) ->
+  verbose take (tool-calls expanded) -> one deliberate no-data edge case ->
+  close with repo link
+- Benchmark table and break-detection example are the two things the article
+  must show working live, not just describe
+
+---
+
+## What not to do
+
+- No hand-rolled SDMX parsing outside `sdmx_client.py` — `sdmx1` already
+  handles ILO's quirks (SDMX-ML 2.0 default response, missing `references`
+  parameter values); redoing this has no portfolio value and adds bug surface
+- No local caching/snapshotting of ILOSTAT data — always live
+- No custom `explain`/verbosity flag on tools — rely on the client's native
+  tool-call display
+- No expanding scope beyond employment + wages without an explicit decision
+  logged in this file
+- No fabricated ground-truth values in the benchmark JSON — pull them from
+  the live API by hand
+- No silent trend/CAGR computation across a detected methodology break

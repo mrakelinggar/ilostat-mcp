@@ -1,0 +1,633 @@
+Installed 17 packages in 92ms
+
+========================================================================
+  CATALOG FETCH
+Fetching all ILOSTAT dataflows...
+Total dataflows: 1212
+Concepts:   0%|          | 0/4 [00:00<?, ?concept/s]Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                      Concept: Unemployment Rate:   0%|          | 0/4 [00:00<?, ?concept/s]Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                   Concept: Employment-to-Population Ratio:   0%|          | 0/4 [00:00<?, ?concept/s]Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [00:00<?, ?concept/s]                                                                                     
+========================================================================
+  CONCEPT: UNEMPLOYMENT RATE
+
+Keywords: ['unemployment rate']
+Total matches: 34  (24 survey, 10 modelled)
+
+
+────────────────────────────────────────────────────────────────────────
+  ALL FLOWS — MODELLED (discarded: ILO imputed estimates, not real survey data)
+  ID                                                    Title
+  ────────────────────────────────────────────────────  ──────────────────────────────────────────────────
+  DF_SDG_0852_SEX_AGE_RT                                SDG indicator 8.5.2: Unemployment rate by sex and age
+  DF_SDG_0852_SEX_DSB_RT                                SDG indicator 8.5.2: Unemployment rate by sex and disability status
+  DF_UNE_2EAP_SEX_AGE_RT                                Unemployment rate by sex and age -- ILO modelled estimates, Nov. 2025
+  DF_UNE_3EAP_SEX_AGE_DSB_RT                            Youth unemployment rate by sex, age and disability status
+  DF_UNE_3EAP_SEX_AGE_EDU_RT                            Youth unemployment rate by sex, age and education
+  DF_UNE_3EAP_SEX_AGE_GEO_RT                            Youth unemployment rate by sex, age and rural / urban areas
+  DF_UNE_3EAP_SEX_AGE_STU_RT                            Youth unemployment rate by sex, age and school attendance status
+  DF_UNE_5EAP_SEX_AGE_RT                                Unemployment rate by sex and age -- 19th ICLS
+  DF_UNE_5EAP_SEX_DSB_RT                                Unemployment rate by sex and disability status -- 19th ICLS
+  DF_UNE_5EAP_SEX_EDU_RT                                Unemployment rate by sex and education -- 19th ICLS
+
+────────────────────────────────────────────────────────────────────────
+  ALL FLOWS — SURVEY (evaluated against selection criterion)
+  Base dims for this concept: ['AGE', 'SEX']
+  Title exclusions (applied after dim check): ['sub-annual', '19th icls']
+
+  ID                                                    Extra dims                    Verdict
+  ────────────────────────────────────────────────────  ────────────────────────────  ────────────────────────────────────────
+  DF_GED_XLU1_SEX_HHT_CHL_RT                            HHT, CHL                      DISCARD — subgroup dim(s): HHT, CHL
+  DF_GED_XLU1_SEX_HHT_GEO_RT                            HHT, GEO                      DISCARD — subgroup dim(s): HHT, GEO
+  DF_SDG_B852_SEX_AGE_RT                                —                             DISCARD — title: '19th icls'
+  DF_SDG_B852_SEX_DSB_RT                                DSB                           DISCARD — subgroup dim(s): DSB
+  DF_UNE_DEA1_SEX_AGE_RT                                —                             DISCARD — title: 'sub-annual'
+  DF_UNE_DEAP_SEX_AGE_CBR_RT                            CBR                           DISCARD — subgroup dim(s): CBR
+  DF_UNE_DEAP_SEX_AGE_CCT_RT                            CCT                           DISCARD — subgroup dim(s): CCT
+  DF_UNE_DEAP_SEX_AGE_DSB_RT                            DSB                           DISCARD — subgroup dim(s): DSB
+  DF_UNE_DEAP_SEX_AGE_EDU_RT                            EDU                           DISCARD — subgroup dim(s): EDU
+  DF_UNE_DEAP_SEX_AGE_GEO_RT                            GEO                           DISCARD — subgroup dim(s): GEO
+  DF_UNE_DEAP_SEX_AGE_MTS_RT                            MTS                           DISCARD — subgroup dim(s): MTS
+  DF_UNE_DEAP_SEX_AGE_RT                                —                             CANDIDATE
+  DF_UNE_DEAP_SEX_DSB_RT                                DSB                           DISCARD — subgroup dim(s): DSB
+  DF_UNE_DEAP_SEX_EDU_CBR_RT                            EDU, CBR                      DISCARD — subgroup dim(s): EDU, CBR
+  DF_UNE_DEAP_SEX_EDU_CCT_RT                            EDU, CCT     xml.Reader got no structure=… argument for StructureSpecificData
+
+     DF_EAR_CMTA_SEX_NB: Average monthly earnings of care employees by sex
+     DF_EAR_EMTA_SEX_CUR_NB: Average monthly earnings of employees by sex and currency
+     DF_EAR_EMTA_SEX_NB: Average monthly earnings of employees by sex
+     DF_EAR_EMTG_SEX_NB: Gini index of monthly earnings of employees by sex
+     DF_EAR_EMTM_SEX_CUR_NB: Median monthly earnings of employees by sex and currency
+     DF_EAR_EMTM_SEX_NB: Median monthly earnings of employees by sex
+     DF_EAR_PMTA_SEX_CUR_NB: Average monthly earnings of public sector employees by sex and currency
+     DF_EAR_PMTA_SEX_NB: Average monthly earnings of public sector employees
+     DF_EAR_SMTA_SEX_CUR_NB: Average monthly earnings of STEM employees by sex and currency
+     DF_EAR_SMTA_SEX_NB: Average monthly earnings of STEM employees
+     DF_EAR_TMTA_SEX_CUR_NB: Average monthly earnings of tourism sector employees by sex and currency
+     DF_EAR_TMTA_SEX_NB: Average monthly earnings of tourism sector employees
+
+────────────────────────────────────────────────────────────────────────
+  COUNTRY COVERAGE (2020–2023, annual data, all countries)
+  DF_EAR_CMTA_SEX_CUR_NB: 66 countries
+  DF_EAR_CMTA_SEX_NB: 67 countries
+  DF_EAR_EMTA_SEX_CUR_NB: 131 countries
+  DF_EAR_EMTA_SEX_NB: 110 countries
+  DF_EAR_EMTG_SEX_NB: 110 countries
+  DF_EAR_EMTM_SEX_CUR_NB: 109 countries
+  DF_EAR_EMTM_SEX_NB: 110 countries
+  DF_EAR_PMTA_SEX_CUR_NB: 77 countries
+  DF_EAR_PMTA_SEX_NB: 78 countries
+  DF_EAR_SMTA_SEX_CUR_NB: 66 countries
+  DF_EAR_SMTA_SEX_NB: 67 countries
+  DF_EAR_TMTA_SEX_CUR_NB: 43 countries
+  DF_EAR_TMTA_SEX_NB: 43 countries
+
+────────────────────────────────────────────────────────────────────────
+  NUMERICAL CROSS-CHECK — ['BRA', 'DEU', 'FRA', 'NGA', 'THA']
+  Filter: SEX_T, AGE_YTHADULT_YGE15, FREQ=A
+  Extra key filter: {'CUR': 'CUR_TYPE_LCU'}
+
+  Country   _CMTA_SEX_CUR_NB      _CMTA_SEX_NB          _EMTA_SEX_CUR_NB      _EMTA_SEX_NB          _EMTG_SEX_NB          _EMTM_SEX_CUR_NB      _EMTM_SEX_NB          _PMTA_SEX_CUR_NB      _PMTA_SEX_NB          _SMTA_SEX_CUR_NB      _SMTA_SEX_NB          _TMTA_SEX_CUR_NB      _TMTA_SEX_NB          Verdict
+  ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  BRA       3100.87 (2024)        Dimensions ['CUR'] n  3154.84 (2024)        Dimensions ['CUR'] n  Dimensions ['CUR'] n  2000.0 (2024)         Dimensions ['CUR'] n  5019.58 (2024)        Dimensions ['CUR'] n  5310.15 (2024)        Dimensions ['CUR'] n  2282.65 (2024)        Dimensions ['CUR'] n  DIFFER (2000.00–5310.15)
+  DEU       HTTP 404              Dimensions ['CUR'] n  4412.67 (2022)        Dimensions ['CUR'] n  Dimensions ['CUR'] n  3774.43 (2022)        Dimensions ['CUR'] n  HTTP 404              Dimensions ['CUR'] n  HTTP 404              Dimensions ['CUR'] n  HTTP 404              Dimensions ['CUR'] n  DIFFER (3774.43–4412.67)
+  FRA       2017.91 (2024)        Dimensions ['CUR'] n  2196.95 (2024)        Dimensions ['CUR'] n  Dimensions ['CUR'] n  1937.0 (2024)         Dimensions ['CUR'] n  2304.4 (2024)         Dimensions ['CUR'] n  2844.86 (2024)        Dimensions ['CUR'] n  HTTP 404              Dimensions ['CUR'] n  DIFFER (1937.00–2844.86)
+  NGA       HTTP 404              Dimensions ['CUR'] n  76488.79 (2024)       Dimensions ['CUR'] n  Dimensions ['CUR'] n  50000.0 (2024)        Dimensions ['CUR'] n  95735.54 (2024)       Dimensions ['CUR'] n  HTTP 404              Dimensions ['CUR'] n  82053.01 (2024)       Dimensions ['CUR'] n  DIFFER (50000.00–95735.54)
+  THA       22525.67 (2024)       Dimensions ['CUR'] n  16519.03 (2024)       Dimensions ['CUR'] n  Dimensions ['CUR'] n  13000.0 (2024)        Dimensions ['CUR'] n  22388.23 (2024)       Dimensions ['CUR'] n  28870.78 (2024)       Dimensions ['CUR'] n  15116.1 (2024)        Dimensions ['CUR'] n  DIFFER (13000.00–28870.78)
+
+────────────────────────────────────────────────────────────────────────
+  DECISION
+  Multiple candidates — selected by broadest country coverage.
+  Selected: DF_EAR_EMTA_SEX_CUR_NB  (131 countries)
+    DF_EAR_CMTA_SEX_CUR_NB: 66 countries
+    DF_EAR_CMTA_SEX_NB: 67 countries
+    DF_EAR_EMTA_SEX_CUR_NB: 131 countries  ← SELECTED
+    DF_EAR_EMTA_SEX_NB: 110 countries
+    DF_EAR_EMTG_SEX_NB: 110 countries
+    DF_EAR_EMTM_SEX_CUR_NB: 109 countries
+    DF_EAR_EMTM_SEX_NB: 110 countries
+    DF_EAR_PMTA_SEX_CUR_NB: 77 countries
+    DF_EAR_PMTA_SEX_NB: 78 countries
+    DF_EAR_SMTA_SEX_CUR_NB: 66 countries
+    DF_EAR_SMTA_SEX_NB: 67 countries
+    DF_EAR_TMTA_SEX_CUR_NB: 43 countries
+    DF_EAR_TMTA_SEX_NB: 43 countries
+
+========================================================================
+  CONCEPT: LABOUR FORCE PARTICIPATION RATE (LFPR)
+
+Keywords searched: ['labour force participation', 'labor force participation']
+Total matches: 30  (23 survey, 7 modelled)
+
+
+────────────────────────────────────────────────────────────────────────
+  ALL FLOWS — MODELLED (discarded: ILO imputed estimates, not real survey data)
+  ID                                                    Title
+  ────────────────────────────────────────────────────  ──────────────────────────────────────────────────
+  DF_EAP_2WAP_SEX_AGE_RT                                Labour force participation rate by sex and age -- ILO modelled estimates, Nov. 2025
+  DF_EAP_3WAP_SEX_AGE_DSB_RT                            Youth labour force participation rate by sex, age and disability status
+  DF_EAP_3WAP_SEX_AGE_EDU_RT                            Youth labour force participation rate by sex, age and education
+  DF_EAP_3WAP_SEX_AGE_GEO_RT                            Youth labour force participation rate by sex, age and rural / urban areas
+  DF_EAP_3WAP_SEX_AGE_STU_RT                            Youth labour force participation rate by sex, age and school attendance status
+  DF_EAP_5WAP_SEX_AGE_RT                                Labour force participation rate by sex and age -- 19th ICLS
+  DF_GED_2LFP_SEX_HHT_RT                                Labour force participation rate for persons ages 25 to 54 by sex and household type -- ILO modelled estimates, Nov. 2023
+
+────────────────────────────────────────────────────────────────────────
+  ALL FLOWS — SURVEY (evaluated against selection criterion)
+  Base dimensions for this concept: ['AGE', 'SEX']
+  Extra dims = any classification in the ID beyond ['AGE', 'SEX'].
+  A flow with extra dims returns a subgroup, not the total — discarded.
+
+  ID                                                    Extra dims                    Verdict
+  ────────────────────────────────────────────────────  ────────────────────────────  ──────────────────────────────
+  DF_EAP_DWA1_SEX_AGE_RT                                —                             CANDIDATE
+  DF_EAP_DWAP_SEX_AGE_CBR_RT                            CBR                           DISCARD — subgroup dim(s): CBR
+  DF_EAP_DWAP_SEX_AGE_CCT_RT                            CCT                           DISCARD — subgroup dim(s): CCT
+  DF_EAP_DWAP_SEX_AGE_DSB_RT                            DSB                           DISCARD — subgroup dim(s): DSB
+  DF_EAP_DWAP_SEX_AGE_EDU_RT                            EDU                           DISCARD — subgroup dim(s): EDU
+  DF_EAP_DWAP_SEX_AGE_GEO_RT                            GEO                           DISCARD — subgroup dim(s): GEO
+  DF_EAP_DWAP_SEX_AGE_MTS_RT                            MTS                           DISCARD — subgroup dim(s): MTS
+  DF_EAP_DWAP_SEX_AGE_RT                                —                             CANDIDATE
+  DF_EAP_DWAP_SEX_DSB_RT                                DSB                           DISCARD — subgroup dim(s): DSB
+  DF_EAP_DWAP_SEX_EDU_CBR_RT                            EDU, CBR                      DISCARD — subgroup dim(s): EDU, CBR
+  DF_EAP_DWAP_SEX_EDU_CCT_RT                            EDU, CCT                      DISCARD — subgroup dim(s): EDU, CCT
+  DF_EAP_DWAP_SEX_EDU_DSB_RT                            EDU, DSB                      DISCARD — subgroup dim(s): EDU, DSB
+  DF_EAP_DWAP_SEX_EDU_GEO_RT                            EDU, GEO                      DISCARD — subgroup dim(s): EDU, GEO
+  DF_EAP_DWAP_SEX_EDU_MTS_RT                            EDU, MTS                      DISCARD — subgroup dim(s): EDU, MTS
+  DF_EAP_DWAP_SEX_EDU_RT                                EDU                           DISCARD — subgroup dim(s): EDU
+  DF_EAP_DWAP_SEX_GEO_DSB_RT                            GEO, DSB                      DISCARD — subgroup dim(s): GEO, DSB
+  DF_EAP_DWAP_SEX_GEO_MTS_RT                            GEO, MTS                      DISCARD — subgroup dim(s): GEO, MTS
+  DF_EAP_DWAP_SEX_GEO_RT                                GEO                           DISCARD — subgroup dim(s): GEO
+  DF_EAP_DWAP_SEX_MTS_DSB_RT                            MTS, DSB                      DISCARD — subgroup dim(s): MTS, DSB
+  DF_EAP_DWAP_SEX_MTS_RT                                MTS                           DISCARD — subgroup dim(s): MTS
+  DF_GED_PLFP_SEX_HHT_CHL_RT                            HHT, CHL                      DISCARD — subgroup dim(s): HHT, CHL
+  DF_GED_PLFP_SEX_HHT_GEO_RT                            HHT, GEO                      DISCARD — subgroup dim(s): HHT, GEO
+  DF_GED_PLFP_SEX_HHT_RT                                HHT                           DISCARD — subgroup dim(s): HHT
+
+  → 2 candidate(s) after discarding subgroup flows
+     DF_EAP_DWA1_SEX_AGE_RT: Labour force participation rate, SA by sex and age (Sub-annual)
+     DF_EAP_DWAP_SEX_AGE_RT: Labour force participation rate by sex and age
+
+────────────────────────────────────────────────────────────────────────
+  COUNTRY COVERAGE (2020–2023, annual data, all countries)
+  DF_EAP_DWA1_SEX_AGE_RT: 0 countries
+  DF_EAP_DWAP_SEX_AGE_RT: 251 countries
+
+────────────────────────────────────────────────────────────────────────
+  NUMERICAL CROSS-CHECK — ['BRA', 'DEU', 'MYS', 'NGA', 'THA']
+  Filter: SEX_T, AGE_YTHADULT_YGE15, FREQ=A
+
+  Country   _DWA1_SEX_AGE_RT      _DWAP_SEX_AGE_RT      Verdict
+  ─────────────────────────────────────────────────────────────
+  BRA       no SEX_T/AGE_YTHADUL  63.21 (2024)          only one candidate returned data
+  DEU       no SEX_T/AGE_YTHADUL  61.85 (2024)          only one candidate returned data
+  MYS       no SEX_T/AGE_YTHADUL  69.3 (2022)           only one candidate returned data
+  NGA       HTTP 404              81.54 (2024)          only one candidate returned data
+  THA       no SEX_T/AGE_YTHADUL  67.77 (2024)          only one candidate returned data
+
+────────────────────────────────────────────────────────────────────────
+  DECISION
+  Multiple candidates — selected by broadest country coverage.
+  Selected: DF_EAP_DWAP_SEX_AGE_RT  (251 countries)
+    DF_EAP_DWA1_SEX_AGE_RT: 0 countries
+    DF_EAP_DWAP_SEX_AGE_RT: 251 countries  ← SELECTED
+
+========================================================================
+  SPECIAL CHECK 1 — Youth unemployment: does AGE_15-24 code exist in unemployment flow?
+
+Youth unemployment has no standalone survey flow (all 14 'youth unemployment' flows
+are ILO modelled estimates). The approach is to filter the canonical unemployment
+flow to the 15–24 age group. This check confirms that age code exists in the flow.
+
+AGE codes available in DF_UNE_DEAP_SEX_AGE_RT for BRA:
+  AGE_10YRBANDS_Y15-24
+  AGE_10YRBANDS_Y25-34
+  AGE_10YRBANDS_Y35-44
+  AGE_10YRBANDS_Y45-54
+  AGE_10YRBANDS_Y55-64
+  AGE_10YRBANDS_YGE15
+  AGE_10YRBANDS_YGE65
+  AGE_5YRBANDS_Y15-19
+  AGE_5YRBANDS_Y20-24
+  AGE_5YRBANDS_Y25-29
+  AGE_5YRBANDS_Y30-34
+  AGE_5YRBANDS_Y35-39
+  AGE_5YRBANDS_Y40-44
+  AGE_5YRBANDS_Y45-49
+  AGE_5YRBANDS_Y50-54
+  AGE_5YRBANDS_Y55-59
+  AGE_5YRBANDS_Y60-64
+  AGE_5YRBANDS_YGE15
+  AGE_5YRBANDS_YGE65
+  AGE_AGGREGATE_Y15-24
+  AGE_AGGREGATE_Y25-54
+  AGE_AGGREGATE_Y55-64
+  AGE_AGGREGATE_YGE15
+  AGE_AGGREGATE_YGE65
+  AGE_YTHADULT_Y15-24
+  AGE_YTHADULT_Y15-64
+  AGE_YTHADULT_YGE15
+  AGE_YTHADULT_YGE25
+
+Likely youth (15–24) codes: ['AGE_YTHADULT_YGE15', 'AGE_YTHADULT_Y15-64', 'AGE_YTHADULT_Y15-24', 'AGE_AGGREGATE_Y15-24', 'AGE_10YRBANDS_Y15-24']
+✅ Youth filtering is supported.
+
+========================================================================
+  SPECIAL CHECK 2 — Wages: is PPP a separate candidate worth exposing?
+
+The wages canonical flow defaults to CUR_TYPE_LCU (local currency unit), which is
+right for within-country analysis. PPP (purchasing power parity) is different data —
+it normalizes across countries. This check answers: does PPP data exist for the
+canonical wages flow, and is there a case for exposing it as a second canonical?
+
+CUR codes available in DF_EAR_EMTA_SEX_CUR_NB for FRA: ['CUR_TYPE_LCU', 'CUR_TYPE_PPP', 'CUR_TYPE_USD']
+  CUR_TYPE_LCU: 4 annual rows
+  CUR_TYPE_PPP: 4 annual rows
+  CUR_TYPE_USD: 4 annual rows
+
+Decision to make after seeing the output:
+  - If PPP data is sparse or unreliable: keep LCU as the only canonical. Document why.
+  - If PPP data is broad and reliable: expose both — LCU as default, PPP as optional.
+    In indicators.py this would be two entries under the wages key.
+
+
+========================================================================
+  SUMMARY — CANONICAL FLOWS
+
+  Concept                              Flow ID                                               Coverage
+  ───────────────────────────────────  ────────────────────────────────────────────────────  ──────────
+  Unemployment Rate                    DF_SDG_B852_SEX_AGE_RT                                see above
+  Employment-to-Population Ratio       DF_EMP_DWA1_SEX_AGE_RT                                see above
+  Average Monthly Earnings (Wages)     DF_EAR_EMTA_SEX_CUR_NB                                see above
+  Labour Force Participation Rate (LFPR)  DF_EAP_DWAP_SEX_AGE_RT                                see above
+
+Record decisions in: local-notes/execution/phase00-concept-discovery/results.md
+
+group dim(s): MTS, DSB
+  DF_EMP_DWAP_SEX_MTS_RT                                MTS                           DISCARD — subgroup dim(s): MTS
+  DF_GED_PEPR_SEX_HHT_CHL_RT                            HHT, CHL                      DISCARD — subgroup dim(s): HHT, CHL
+  DF_GED_PEPR_SEX_HHT_GEO_RT                            HHT, GEO                      DISCARD — subgroup dim(s): HHT, GEO
+
+  → 1 candidate(s) remaining
+     DF_EMP_DWAP_SEX_AGE_RT: Employment-to-population ratio by sex and age
+
+────────────────────────────────────────────────────────────────────────
+  DECISION
+  Single candidate: DF_EMP_DWAP_SEX_AGE_RT
+  Title: Employment-to-population ratio by sex and age
+  Why: only survey flow for this concept with no extra dims and no title exclusions.
+
+========================================================================
+  CONCEPT: AVERAGE MONTHLY EARNINGS (WAGES)
+
+Keywords: ['monthly earnings']
+Total matches: 56  (56 survey, 0 modelled)
+
+
+────────────────────────────────────────────────────────────────────────
+  ALL FLOWS — MODELLED (discarded: ILO imputed estimates, not real survey data)
+  ID                                                    Title
+  ────────────────────────────────────────────────────  ──────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────
+  ALL FLOWS — SURVEY (evaluated against selection criterion)
+  Base dims for this concept: ['CUR', 'SEX']
+  Title exclusions (applied after dim check): ['sub-annual', '19th icls']
+
+  ID                                                    Extra dims                    Verdict
+  ────────────────────────────────────────────────────  ────────────────────────────  ────────────────────────────────────────
+  DF_EAR_CMTA_SEX_CUR_NB                                —                             CANDIDATE
+  DF_EAR_CMTA_SEX_NB                                    —                             CANDIDATE
+  DF_EAR_EMTA_SEX_AGE_CUR_NB                            AGE                           DISCARD — subgroup dim(s): AGE
+  DF_EAR_EMTA_SEX_AGE_NB                                AGE                           DISCARD — subgroup dim(s): AGE
+  DF_EAR_EMTA_SEX_CBR_CUR_NB                            CBR                           DISCARD — subgroup dim(s): CBR
+  DF_EAR_EMTA_SEX_CBR_NB                                CBR                           DISCARD — subgroup dim(s): CBR
+  DF_EAR_EMTA_SEX_CCT_CUR_NB                            CCT                           DISCARD — subgroup dim(s): CCT
+  DF_EAR_EMTA_SEX_CCT_NB                                CCT                           DISCARD — subgroup dim(s): CCT
+  DF_EAR_EMTA_SEX_CUR_NB                                —                             CANDIDATE
+  DF_EAR_EMTA_SEX_DSB_CUR_NB                            DSB                           DISCARD — subgroup dim(s): DSB
+  DF_EAR_EMTA_SEX_DSB_NB                                DSB                           DISCARD — subgroup dim(s): DSB
+  DF_EAR_EMTA_SEX_ECO_CUR_NB                            ECO                           DISCARD — subgroup dim(s): ECO
+  DF_EAR_EMTA_SEX_ECO_NB                                ECO                           DISCARD — subgroup dim(s): ECO
+  DF_EAR_EMTA_SEX_EDU_CUR_NB                            EDU                           DISCARD — subgroup dim(s): EDU
+  DF_EAR_EMTA_SEX_EDU_NB                                EDU                           DISCARD — subgroup dim(s): EDU
+  DF_EAR_EMTA_SEX_GEO_CUR_NB                            GEO                           DISCARD — subgroup dim(s): GEO
+  DF_EAR_EMTA_SEX_GEO_NB                                GEO                           DISCARD — subgroup dim(s): GEO
+  DF_EAR_EMTA_SEX_IND_CUR_NB                            IND                           DISCARD — subgroup dim(s): IND
+  DF_EAR_EMTA_SEX_IND_NB                                IND                           DISCARD — subgroup dim(s): IND
+  DF_EAR_EMTA_SEX_MTS_CUR_NB                            MTS                           DISCARD — subgroup dim(s): MTS
+  DF_EAR_EMTA_SEX_MTS_NB                                MTS                           DISCARD — subgroup dim(s): MTS
+  DF_EAR_EMTA_SEX_NB                                    —                             CANDIDATE
+  DF_EAR_EMTA_SEX_OCU_CUR_NB                            OCU                           DISCARD — subgroup dim(s): OCU
+  DF_EAR_EMTA_SEX_OCU_NB                                OCU                           DISCARD — subgroup dim(s): OCU
+  DF_EAR_EMTG_SEX_AGE_NB                                AGE                           DISCARD — subgroup dim(s): AGE
+  DF_EAR_EMTG_SEX_DSB_NB                                DSB                           DISCARD — subgroup dim(s): DSB
+  DF_EAR_EMTG_SEX_ECO_NB                                ECO                           DISCARD — subgroup dim(s): ECO
+  DF_EAR_EMTG_SEX_EDU_NB                                EDU                           DISCARD — subgroup dim(s): EDU
+  DF_EAR_EMTG_SEX_GEO_NB                                GEO                           DISCARD — subgroup dim(s): GEO
+  DF_EAR_EMTG_SEX_MTS_NB                                MTS                           DISCARD — subgroup dim(s): MTS
+  DF_EAR_EMTG_SEX_NB                                    —                             CANDIDATE
+  DF_EAR_EMTG_SEX_OCU_NB                                OCU                           DISCARD — subgroup dim(s): OCU
+  DF_EAR_EMTM_SEX_AGE_CUR_NB                            AGE                           DISCARD — subgroup dim(s): AGE
+  DF_EAR_EMTM_SEX_AGE_NB                                AGE                           DISCARD — subgroup dim(s): AGE
+  DF_EAR_EMTM_SEX_CUR_NB                                —                             CANDIDATE
+  DF_EAR_EMTM_SEX_DSB_CUR_NB                            DSB                           DISCARD — subgroup dim(s): DSB
+  DF_EAR_EMTM_SEX_DSB_NB                                DSB                           DISCARD — subgroup dim(s): DSB
+  DF_EAR_EMTM_SEX_ECO_CUR_NB                            ECO                           DISCARD — subgroup dim(s): ECO
+  DF_EAR_EMTM_SEX_ECO_NB                                ECO                           DISCARD — subgroup dim(s): ECO
+  DF_EAR_EMTM_SEX_EDU_CUR_NB                            EDU                           DISCARD — subgroup dim(s): EDU
+  DF_EAR_EMTM_SEX_EDU_NB                                EDU                           DISCARD — subgroup dim(s): EDU
+  DF_EAR_EMTM_SEX_GEO_CUR_NB                            GEO                           DISCARD — subgroup dim(s): GEO
+  DF_EAR_EMTM_SEX_GEO_NB                                GEO                           DISCARD — subgroup dim(s): GEO
+  DF_EAR_EMTM_SEX_MTS_CUR_NB                            MTS                           DISCARD — subgroup dim(s): MTS
+  DF_EAR_EMTM_SEX_MTS_NB                                MTS                           DISCARD — subgroup dim(s): MTS
+  DF_EAR_EMTM_SEX_NB                                    —                             CANDIDATE
+  DF_EAR_EMTM_SEX_OCU_CUR_NB                            OCU                           DISCARD — subgroup dim(s): OCU
+  DF_EAR_EMTM_SEX_OCU_NB                                OCU                           DISCARD — subgroup dim(s): OCU
+  DF_EAR_PMTA_SEX_CUR_NB                                —                             CANDIDATE
+  DF_EAR_PMTA_SEX_NB                                    —                             CANDIDATE
+  DF_EAR_SMTA_SEX_CUR_NB                                —                             CANDIDATE
+  DF_EAR_SMTA_SEX_NB                                    —                             CANDIDATE
+  DF_EAR_TMTA_SEX_CUR_NB                                —                             CANDIDATE
+  DF_EAR_TMTA_SEX_NB                                    —                             CANDIDATE
+  DF_GED_PEAR_SEX_HHT_CHL_NB                            HHT, CHL                      DISCARD — subgroup dim(s): HHT, CHL
+  DF_GED_PEAR_SEX_HHT_GEO_NB                            HHT, GEO                      DISCARD — subgroup dim(s): HHT, GEO
+
+  → 13 candidate(s) remaining
+     DF_EAR_CMTA_SEX_CUR_NB: Average monthly earnings of care employees by sex and currency
+     DF_EAR_CMTA_SEX_NB: Average monthly earnings of care employees by sex
+     DF_EAR_EMTA_SEX_CUR_NB: Average monthly earnings of employees by sex and currency
+     DF_EAR_EMTA_SEX_NB: Average monthly earnings of employees by sex
+     DF_EAR_EMTG_SEX_NB: Gini index of monthly earnings of employees by sex
+     DF_EAR_EMTM_SEX_CUR_NB: Median monthly earnings of employees by sex and currency
+     DF_EAR_EMTM_SEX_NB: Median monthly earnings of employees by sex
+     DF_EAR_PMTA_SEX_CUR_NB: Average monthly earnings of public sector employees by sex and currency
+     DF_EAR_PMTA_SEX_NB: Average monthly earnings of public sector employees
+     DF_EAR_SMTA_SEX_CUR_NB: Average monthly earnings of STEM employees by sex and currency
+     DF_EAR_SMTA_SEX_NB: Average monthly earnings of STEM employees
+     DF_EAR_TMTA_SEX_CUR_NB: Average monthly earnings of tourism sector employees by sex and currency
+     DF_EAR_TMTA_SEX_NB: Average monthly earnings of tourism sector employees
+
+────────────────────────────────────────────────────────────────────────
+  NUMERICAL CROSS-CHECK — ['BRA', 'DEU', 'FRA', 'NGA', 'THA']
+  Filter: SEX_T, AGE_YTHADULT_YGE15, FREQ=A
+  Extra key filter: {'CUR': 'CUR_TYPE_LCU'}
+
+  Country   EAR_CMTA_SEX_CUR_NB     EAR_CMTA_SEX_NB         EAR_EMTA_SEX_CUR_NB     EAR_EMTA_SEX_NB         EAR_EMTG_SEX_NB         EAR_EMTM_SEX_CUR_NB     EAR_EMTM_SEX_NB         EAR_PMTA_SEX_CUR_NB     EAR_PMTA_SEX_NB         EAR_SMTA_SEX_CUR_NB     EAR_SMTA_SEX_NB         EAR_TMTA_SEX_CUR_NB     EAR_TMTA_SEX_NB         Verdict
+  ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+  cross-check calls:   0%|          | 0/65 [00:00<?, ?call/s][A
+  BRA / _EAR_CMTA_SEX_CUR_NB:   0%|          | 0/65 [00:00<?, ?call/s][A
+  BRA / _EAR_CMTA_SEX_CUR_NB:   2%|▏         | 1/65 [00:01<02:03,  1.94s/call][A
+  BRA / DF_EAR_CMTA_SEX_NB:   2%|▏         | 1/65 [00:01<02:03,  1.94s/call]  [A
+  BRA / DF_EAR_CMTA_SEX_NB:   3%|▎         | 2/65 [00:03<01:34,  1.50s/call][A
+  BRA / _EAR_EMTA_SEX_CUR_NB:   3%|▎         | 2/65 [00:03<01:34,  1.50s/call][A
+  BRA / _EAR_EMTA_SEX_CUR_NB:   5%|▍         | 3/65 [00:05<02:04,  2.00s/call][A
+  BRA / DF_EAR_EMTA_SEX_NB:   5%|▍         | 3/65 [00:05<02:04,  2.00s/call]  [A
+  BRA / DF_EAR_EMTA_SEX_NB:   6%|▌         | 4/65 [00:07<02:07,  2.08s/call][A
+  BRA / DF_EAR_EMTG_SEX_NB:   6%|▌         | 4/65 [00:07<02:07,  2.08s/call][A
+  BRA / DF_EAR_EMTG_SEX_NB:   8%|▊         | 5/65 [00:09<02:01,  2.02s/call][A
+  BRA / _EAR_EMTM_SEX_CUR_NB:   8%|▊         | 5/65 [00:09<02:01,  2.02s/call][A
+  BRA / _EAR_EMTM_SEX_CUR_NB:   9%|▉         | 6/65 [00:13<02:36,  2.66s/call][A
+  BRA / DF_EAR_EMTM_SEX_NB:   9%|▉         | 6/65 [00:13<02:36,  2.66s/call]  [A
+  BRA / DF_EAR_EMTM_SEX_NB:  11%|█         | 7/65 [00:16<02:41,  2.79s/call][A
+  BRA / _EAR_PMTA_SEX_CUR_NB:  11%|█         | 7/65 [00:16<02:41,  2.79s/call][A
+  BRA / _EAR_PMTA_SEX_CUR_NB:  12%|█▏        | 8/65 [00:19<02:34,  2.72s/call][A
+  BRA / DF_EAR_PMTA_SEX_NB:  12%|█▏        | 8/65 [00:19<02:34,  2.72s/call]  [A
+  BRA / DF_EAR_PMTA_SEX_NB:  14%|█▍        | 9/65 [00:21<02:16,  2.43s/call][A
+  BRA / _EAR_SMTA_SEX_CUR_NB:  14%|█▍        | 9/65 [00:21<02:16,  2.43s/call][A
+  BRA / _EAR_SMTA_SEX_CUR_NB:  15%|█▌        | 10/65 [00:23<02:19,  2.55s/call][A
+  BRA / DF_EAR_SMTA_SEX_NB:  15%|█▌        | 10/65 [00:23<02:19,  2.55s/call]  [A
+  BRA / DF_EAR_SMTA_SEX_NB:  17%|█▋        | 11/65 [00:26<02:13,  2.46s/call][A
+  BRA / _EAR_TMTA_SEX_CUR_NB:  17%|█▋        | 11/65 [00:26<02:13,  2.46s/call][A
+  BRA / _EAR_TMTA_SEX_CUR_NB:  18%|█▊        | 12/65 [00:30<02:36,  2.96s/call][A
+  BRA / DF_EAR_TMTA_SEX_NB:  18%|█▊        | 12/65 [00:30<02:36,  2.96s/call]  [A
+  BRA / DF_EAR_TMTA_SEX_NB:  20%|██        | 13/65 [00:33<02:36,  3.01s/call][A
+  DEU / _EAR_CMTA_SEX_CUR_NB:  20%|██        | 13/65 [00:33<02:36,  3.01s/call][A
+  DEU / _EAR_CMTA_SEX_CUR_NB:  22%|██▏       | 14/65 [00:34<02:05,  2.46s/call][A
+  DEU / DF_EAR_CMTA_SEX_NB:  22%|██▏       | 14/65 [00:34<02:05,  2.46s/call]  [A
+  DEU / _EAR_EMTA_SEX_CUR_NB:  23%|██▎       | 15/65 [00:34<02:03,  2.46s/call][A
+  DEU / _EAR_EMTA_SEX_CUR_NB:  25%|██▍       | 16/65 [00:35<01:19,  1.62s/call][A
+  DEU / DF_EAR_EMTA_SEX_NB:  25%|██▍       | 16/65 [00:35<01:19,  1.62s/call]  [A
+  DEU / DF_EAR_EMTG_SEX_NB:  26%|██▌       | 17/65 [00:35<01:17,  1.62s/call][A
+  DEU / _EAR_EMTM_SEX_CUR_NB:  28%|██▊       | 18/65 [00:35<01:16,  1.62s/call][A
+  DEU / _EAR_EMTM_SEX_CUR_NB:  29%|██▉       | 19/65 [00:37<00:49,  1.07s/call][A
+  DEU / DF_EAR_EMTM_SEX_NB:  29%|██▉       | 19/65 [00:37<00:49,  1.07s/call]  [A
+  DEU / _EAR_PMTA_SEX_CUR_NB:  31%|███       | 20/65 [00:37<00:48,  1.07s/call][A
+  DEU / _EAR_PMTA_SEX_CUR_NB:  32%|███▏      | 21/65 [00:38<00:39,  1.11call/s][A
+  DEU / DF_EAR_PMTA_SEX_NB:  32%|███▏      | 21/65 [00:38<00:39,  1.11call/s]  [A
+  DEU / _EAR_SMTA_SEX_CUR_NB:  34%|███▍      | 22/65 [00:38<00:38,  1.11call/s][A
+  DEU / _EAR_SMTA_SEX_CUR_NB:  35%|███▌      | 23/65 [00:40<00:39,  1.06call/s][A
+  DEU / DF_EAR_SMTA_SEX_NB:  35%|███▌      | 23/65 [00:40<00:39,  1.06call/s]  [A
+  DEU / _EAR_TMTA_SEX_CUR_NB:  37%|███▋      | 24/65 [00:40<00:38,  1.06call/s][A
+  DEU / _EAR_TMTA_SEX_CUR_NB:  38%|███▊      | 25/65 [00:42<00:39,  1.02call/s][A
+  DEU / DF_EAR_TMTA_SEX_NB:  38%|███▊      | 25/65 [00:42<00:39,  1.02call/s]  [A
+  FRA / _EAR_CMTA_SEX_CUR_NB:  40%|████      | 26/65 [00:42<00:38,  1.02call/s][A
+  FRA / _EAR_CMTA_SEX_CUR_NB:  42%|████▏     | 27/65 [00:45<00:39,  1.05s/call][A
+  FRA / DF_EAR_CMTA_SEX_NB:  42%|████▏     | 27/65 [00:45<00:39,  1.05s/call]  [A
+  FRA / _EAR_EMTA_SEX_CUR_NB:  43%|████▎     | 28/65 [00:45<00:38,  1.05s/call][A
+  FRA / _EAR_EMTA_SEX_CUR_NB:  45%|████▍     | 29/65 [00:47<00:36,  1.02s/call][A
+  FRA / DF_EAR_EMTA_SEX_NB:  45%|████▍     | 29/65 [00:47<00:36,  1.02s/call]  [A
+  FRA / DF_EAR_EMTG_SEX_NB:  46%|████▌     | 30/65 [00:47<00:35,  1.02s/call][A
+  FRA / _EAR_EMTM_SEX_CUR_NB:  48%|████▊     | 31/65 [00:47<00:34,  1.02s/call][A
+  FRA / _EAR_EMTM_SEX_CUR_NB:  49%|████▉     | 32/65 [00:48<00:27,  1.19call/s][A
+  FRA / DF_EAR_EMTM_SEX_NB:  49%|████▉     | 32/65 [00:48<00:27,  1.19call/s]  [A
+  FRA / _EAR_PMTA_SEX_CUR_NB:  51%|█████     | 33/65 [00:48<00:26,  1.19call/s][A
+  FRA / _EAR_PMTA_SEX_CUR_NB:  52%|█████▏    | 34/65 [00:50<00:25,  1.21call/s][A
+  FRA / DF_EAR_PMTA_SEX_NB:  52%|█████▏    | 34/65 [00:50<00:25,  1.21call/s]  [A
+  FRA / _EAR_SMTA_SEX_CUR_NB:  54%|█████▍    | 35/65 [00:50<00:24,  1.21call/s][A
+  FRA / _EAR_SMTA_SEX_CUR_NB:  55%|█████▌    | 36/65 [00:52<00:25,  1.14call/s][A
+  FRA / DF_EAR_SMTA_SEX_NB:  55%|█████▌    | 36/65 [00:52<00:25,  1.14call/s]  [A
+  FRA / _EAR_TMTA_SEX_CUR_NB:  57%|█████▋    | 37/65 [00:52<00:24,  1.14call/s][A
+  FRA / _EAR_TMTA_SEX_CUR_NB:  58%|█████▊    | 38/65 [00:53<00:21,  1.24call/s][A
+  FRA / DF_EAR_TMTA_SEX_NB:  58%|█████▊    | 38/65 [00:53<00:21,  1.24call/s]  [A
+  NGA / _EAR_CMTA_SEX_CUR_NB:  60%|██████    | 39/65 [00:53<00:21,  1.24call/s][A
+  NGA / _EAR_CMTA_SEX_CUR_NB:  62%|██████▏   | 40/65 [00:55<00:21,  1.15call/s][A
+  NGA / DF_EAR_CMTA_SEX_NB:  62%|██████▏   | 40/65 [00:55<00:21,  1.15call/s]  [A
+  NGA / _EAR_EMTA_SEX_CUR_NB:  63%|██████▎   | 41/65 [00:55<00:20,  1.15call/s][A
+  NGA / _EAR_EMTA_SEX_CUR_NB:  65%|██████▍   | 42/65 [00:57<00:21,  1.09call/s][A
+  NGA / DF_EAR_EMTA_SEX_NB:  65%|██████▍   | 42/65 [00:57<00:21,  1.09call/s]  [A
+  NGA / DF_EAR_EMTG_SEX_NB:  66%|██████▌   | 43/65 [00:57<00:20,  1.09call/s][A
+  NGA / _EAR_EMTM_SEX_CUR_NB:  68%|██████▊   | 44/65 [00:57<00:19,  1.09call/s][A
+  NGA / _EAR_EMTM_SEX_CUR_NB:  69%|██████▉   | 45/65 [01:01<00:20,  1.01s/call][A
+  NGA / DF_EAR_EMTM_SEX_NB:  69%|██████▉   | 45/65 [01:01<00:20,  1.01s/call]  [A
+  NGA / _EAR_PMTA_SEX_CUR_NB:  71%|███████   | 46/65 [01:01<00:19,  1.01s/call][A
+  NGA / _EAR_PMTA_SEX_CUR_NB:  72%|███████▏  | 47/65 [01:03<00:19,  1.07s/call][A
+  NGA / DF_EAR_PMTA_SEX_NB:  72%|███████▏  | 47/65 [01:03<00:19,  1.07s/call]  [A
+  NGA / _EAR_SMTA_SEX_CUR_NB:  74%|███████▍  | 48/65 [01:03<00:18,  1.07s/call][A
+  NGA / _EAR_SMTA_SEX_CUR_NB:  75%|███████▌  | 49/65 [01:04<00:14,  1.09call/s][A
+  NGA / DF_EAR_SMTA_SEX_NB:  75%|███████▌  | 49/65 [01:04<00:14,  1.09call/s]  [A
+  NGA / _EAR_TMTA_SEX_CUR_NB:  77%|███████▋  | 50/65 [01:04<00:13,  1.09call/s][A
+  NGA / _EAR_TMTA_SEX_CUR_NB:  78%|███████▊  | 51/65 [01:06<00:13,  1.07call/s][A
+  NGA / DF_EAR_TMTA_SEX_NB:  78%|███████▊  | 51/65 [01:06<00:13,  1.07call/s]  [A
+  THA / _EAR_CMTA_SEX_CUR_NB:  80%|████████  | 52/65 [01:06<00:12,  1.07call/s][A
+  THA / _EAR_CMTA_SEX_CUR_NB:  82%|████████▏ | 53/65 [01:08<00:11,  1.04call/s][A
+  THA / DF_EAR_CMTA_SEX_NB:  82%|████████▏ | 53/65 [01:08<00:11,  1.04call/s]  [A
+  THA / _EAR_EMTA_SEX_CUR_NB:  83%|████████▎ | 54/65 [01:08<00:10,  1.04call/s][A
+  THA / _EAR_EMTA_SEX_CUR_NB:  85%|████████▍ | 55/65 [01:11<00:10,  1.06s/call][A
+  THA / DF_EAR_EMTA_SEX_NB:  85%|████████▍ | 55/65 [01:11<00:10,  1.06s/call]  [A
+  THA / DF_EAR_EMTG_SEX_NB:  86%|████████▌ | 56/65 [01:11<00:09,  1.06s/call][A
+  THA / _EAR_EMTM_SEX_CUR_NB:  88%|████████▊ | 57/65 [01:11<00:08,  1.06s/call][A
+  THA / _EAR_EMTM_SEX_CUR_NB:  89%|████████▉ | 58/65 [01:14<00:07,  1.03s/call][A
+  THA / DF_EAR_EMTM_SEX_NB:  89%|████████▉ | 58/65 [01:14<00:07,  1.03s/call]  [A
+  THA / _EAR_PMTA_SEX_CUR_NB:  91%|█████████ | 59/65 [01:14<00:06,  1.03s/call][A
+  THA / _EAR_PMTA_SEX_CUR_NB:  92%|█████████▏| 60/65 [01:15<00:04,  1.08call/s][A
+  THA / DF_EAR_PMTA_SEX_NB:  92%|█████████▏| 60/65 [01:15<00:04,  1.08call/s]  [A
+  THA / _EAR_SMTA_SEX_CUR_NB:  94%|█████████▍| 61/65 [01:15<00:03,  1.08call/s][A
+  THA / _EAR_SMTA_SEX_CUR_NB:  95%|█████████▌| 62/65 [01:17<00:02,  1.09call/s][A
+  THA / DF_EAR_SMTA_SEX_NB:  95%|█████████▌| 62/65 [01:17<00:02,  1.09call/s]  [A
+  THA / _EAR_TMTA_SEX_CUR_NB:  97%|█████████▋| 63/65 [01:17<00:01,  1.09call/s][A
+  THA / _EAR_TMTA_SEX_CUR_NB:  98%|█████████▊| 64/65 [01:19<00:00,  1.09call/s][A
+  THA / DF_EAR_TMTA_SEX_NB:  98%|█████████▊| 64/65 [01:19<00:00,  1.09call/s]  [A
+                                                                             [A                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [01:19<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [01:19<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [01:19<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [01:19<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [01:19<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [01:19<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [01:19<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [01:19<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [01:19<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [01:19<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [01:19<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [01:19<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [01:19<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [01:19<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [01:19<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [01:19<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [01:19<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [01:19<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [01:19<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [01:19<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [01:19<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [01:19<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [01:19<?, ?concept/s]                                                                                     Concept: Average Monthly Earnings (Wages):   0%|          | 0/4 [01:19<?, ?concept/s]Concept: Average Monthly Earnings (Wages):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]                                                                                                   Concept: Labour Force Participation Rate (LFPR):  75%|███████▌  | 3/4 [01:19<00:26, 26.39s/concept]Concept: Labour Force Participation Rate (LFPR): 100%|██████████| 4/4 [01:19<00:00, 19.79s/concept]
+  BRA       3100.87 (2024)          Dimensions ['CUR'] not  3154.84 (2024)          Dimensions ['CUR'] not  Dimensions ['CUR'] not  2000.0 (2024)           Dimensions ['CUR'] not  5019.58 (2024)          Dimensions ['CUR'] not  5310.15 (2024)          Dimensions ['CUR'] not  2282.65 (2024)          Dimensions ['CUR'] not  DIFFER (2000.00–5310.15)
+  DEU       HTTP 404                Dimensions ['CUR'] not  4412.67 (2022)          Dimensions ['CUR'] not  Dimensions ['CUR'] not  3774.43 (2022)          Dimensions ['CUR'] not  HTTP 404                Dimensions ['CUR'] not  HTTP 404                Dimensions ['CUR'] not  HTTP 404                Dimensions ['CUR'] not  DIFFER (3774.43–4412.67)
+  FRA       2017.91 (2024)          Dimensions ['CUR'] not  2196.95 (2024)          Dimensions ['CUR'] not  Dimensions ['CUR'] not  1937.0 (2024)           Dimensions ['CUR'] not  2304.4 (2024)           Dimensions ['CUR'] not  2844.86 (2024)          Dimensions ['CUR'] not  HTTP 404                Dimensions ['CUR'] not  DIFFER (1937.00–2844.86)
+  NGA       HTTP 404                Dimensions ['CUR'] not  76488.79 (2024)         Dimensions ['CUR'] not  Dimensions ['CUR'] not  50000.0 (2024)          Dimensions ['CUR'] not  95735.54 (2024)         Dimensions ['CUR'] not  HTTP 404                Dimensions ['CUR'] not  82053.01 (2024)         Dimensions ['CUR'] not  DIFFER (50000.00–95735.54)
+  THA       22525.67 (2024)         Dimensions ['CUR'] not  16519.03 (2024)         Dimensions ['CUR'] not  Dimensions ['CUR'] not  13000.0 (2024)          Dimensions ['CUR'] not  22388.23 (2024)         Dimensions ['CUR'] not  28870.78 (2024)         Dimensions ['CUR'] not  15116.1 (2024)          Dimensions ['CUR'] not  DIFFER (13000.00–28870.78)
+
+  Coverage proxy (# of 5 test countries returning data):
+    DF_EAR_CMTA_SEX_CUR_NB: 3/5
+    DF_EAR_CMTA_SEX_NB: 0/5
+    DF_EAR_EMTA_SEX_CUR_NB: 5/5
+    DF_EAR_EMTA_SEX_NB: 0/5
+    DF_EAR_EMTG_SEX_NB: 0/5
+    DF_EAR_EMTM_SEX_CUR_NB: 5/5
+    DF_EAR_EMTM_SEX_NB: 0/5
+    DF_EAR_PMTA_SEX_CUR_NB: 4/5
+    DF_EAR_PMTA_SEX_NB: 0/5
+    DF_EAR_SMTA_SEX_CUR_NB: 3/5
+    DF_EAR_SMTA_SEX_NB: 0/5
+    DF_EAR_TMTA_SEX_CUR_NB: 3/5
+    DF_EAR_TMTA_SEX_NB: 0/5
+
+────────────────────────────────────────────────────────────────────────
+  DECISION
+  ⚠ TIE in coverage proxy — manual review needed.
+  Tied candidates: ['DF_EAR_EMTA_SEX_CUR_NB', 'DF_EAR_EMTM_SEX_CUR_NB']
+  Defaulting to first alphabetically: DF_EAR_EMTA_SEX_CUR_NB
+
+========================================================================
+  CONCEPT: LABOUR FORCE PARTICIPATION RATE (LFPR)
+
+Keywords: ['labour force participation', 'labor force participation']
+Total matches: 30  (23 survey, 7 modelled)
+
+
+────────────────────────────────────────────────────────────────────────
+  ALL FLOWS — MODELLED (discarded: ILO imputed estimates, not real survey data)
+  ID                                                    Title
+  ────────────────────────────────────────────────────  ──────────────────────────────────────────────────
+  DF_EAP_2WAP_SEX_AGE_RT                                Labour force participation rate by sex and age -- ILO modelled estimates, Nov. 2025
+  DF_EAP_3WAP_SEX_AGE_DSB_RT                            Youth labour force participation rate by sex, age and disability status
+  DF_EAP_3WAP_SEX_AGE_EDU_RT                            Youth labour force participation rate by sex, age and education
+  DF_EAP_3WAP_SEX_AGE_GEO_RT                            Youth labour force participation rate by sex, age and rural / urban areas
+  DF_EAP_3WAP_SEX_AGE_STU_RT                            Youth labour force participation rate by sex, age and school attendance status
+  DF_EAP_5WAP_SEX_AGE_RT                                Labour force participation rate by sex and age -- 19th ICLS
+  DF_GED_2LFP_SEX_HHT_RT                                Labour force participation rate for persons ages 25 to 54 by sex and household type -- ILO modelled estimates, Nov. 2023
+
+────────────────────────────────────────────────────────────────────────
+  ALL FLOWS — SURVEY (evaluated against selection criterion)
+  Base dims for this concept: ['AGE', 'SEX']
+  Title exclusions (applied after dim check): ['sub-annual', '19th icls']
+
+  ID                                                    Extra dims                    Verdict
+  ────────────────────────────────────────────────────  ────────────────────────────  ────────────────────────────────────────
+  DF_EAP_DWA1_SEX_AGE_RT                                —                             DISCARD — title: 'sub-annual'
+  DF_EAP_DWAP_SEX_AGE_CBR_RT                            CBR                           DISCARD — subgroup dim(s): CBR
+  DF_EAP_DWAP_SEX_AGE_CCT_RT                            CCT                           DISCARD — subgroup dim(s): CCT
+  DF_EAP_DWAP_SEX_AGE_DSB_RT                            DSB                           DISCARD — subgroup dim(s): DSB
+  DF_EAP_DWAP_SEX_AGE_EDU_RT                            EDU                           DISCARD — subgroup dim(s): EDU
+  DF_EAP_DWAP_SEX_AGE_GEO_RT                            GEO                           DISCARD — subgroup dim(s): GEO
+  DF_EAP_DWAP_SEX_AGE_MTS_RT                            MTS                           DISCARD — subgroup dim(s): MTS
+  DF_EAP_DWAP_SEX_AGE_RT                                —                             CANDIDATE
+  DF_EAP_DWAP_SEX_DSB_RT                                DSB                           DISCARD — subgroup dim(s): DSB
+  DF_EAP_DWAP_SEX_EDU_CBR_RT                            EDU, CBR                      DISCARD — subgroup dim(s): EDU, CBR
+  DF_EAP_DWAP_SEX_EDU_CCT_RT                            EDU, CCT                      DISCARD — subgroup dim(s): EDU, CCT
+  DF_EAP_DWAP_SEX_EDU_DSB_RT                            EDU, DSB                      DISCARD — subgroup dim(s): EDU, DSB
+  DF_EAP_DWAP_SEX_EDU_GEO_RT                            EDU, GEO                      DISCARD — subgroup dim(s): EDU, GEO
+  DF_EAP_DWAP_SEX_EDU_MTS_RT                            EDU, MTS                      DISCARD — subgroup dim(s): EDU, MTS
+  DF_EAP_DWAP_SEX_EDU_RT                                EDU                           DISCARD — subgroup dim(s): EDU
+  DF_EAP_DWAP_SEX_GEO_DSB_RT                            GEO, DSB                      DISCARD — subgroup dim(s): GEO, DSB
+  DF_EAP_DWAP_SEX_GEO_MTS_RT                            GEO, MTS                      DISCARD — subgroup dim(s): GEO, MTS
+  DF_EAP_DWAP_SEX_GEO_RT                                GEO                           DISCARD — subgroup dim(s): GEO
+  DF_EAP_DWAP_SEX_MTS_DSB_RT                            MTS, DSB                      DISCARD — subgroup dim(s): MTS, DSB
+  DF_EAP_DWAP_SEX_MTS_RT                                MTS                           DISCARD — subgroup dim(s): MTS
+  DF_GED_PLFP_SEX_HHT_CHL_RT                            HHT, CHL                      DISCARD — subgroup dim(s): HHT, CHL
+  DF_GED_PLFP_SEX_HHT_GEO_RT                            HHT, GEO                      DISCARD — subgroup dim(s): HHT, GEO
+  DF_GED_PLFP_SEX_HHT_RT                                HHT                           DISCARD — subgroup dim(s): HHT
+
+  → 1 candidate(s) remaining
+     DF_EAP_DWAP_SEX_AGE_RT: Labour force participation rate by sex and age
+
+────────────────────────────────────────────────────────────────────────
+  DECISION
+  Single candidate: DF_EAP_DWAP_SEX_AGE_RT
+  Title: Labour force participation rate by sex and age
+  Why: only survey flow for this concept with no extra dims and no title exclusions.
+
+========================================================================
+  SPECIAL CHECK 1 — Youth unemployment: does age 15–24 code exist in unemployment flow?
+
+No standalone survey flow for youth unemployment exists — all 14 'youth
+unemployment' flows are ILO modelled estimates. Approach: filter the canonical
+unemployment flow by age 15–24. This check confirms that age code exists.
+
+AGE codes in DF_UNE_DEAP_SEX_AGE_RT for BRA:
+  AGE_10YRBANDS_Y15-24
+  AGE_10YRBANDS_Y25-34
+  AGE_10YRBANDS_Y35-44
+  AGE_10YRBANDS_Y45-54
+  AGE_10YRBANDS_Y55-64
+  AGE_10YRBANDS_YGE15
+  AGE_10YRBANDS_YGE65
+  AGE_5YRBANDS_Y15-19
+  AGE_5YRBANDS_Y20-24
+  AGE_5YRBANDS_Y25-29
+  AGE_5YRBANDS_Y30-34
+  AGE_5YRBANDS_Y35-39
+  AGE_5YRBANDS_Y40-44
+  AGE_5YRBANDS_Y45-49
+  AGE_5YRBANDS_Y50-54
+  AGE_5YRBANDS_Y55-59
+  AGE_5YRBANDS_Y60-64
+  AGE_5YRBANDS_YGE15
+  AGE_5YRBANDS_YGE65
+  AGE_AGGREGATE_Y15-24
+  AGE_AGGREGATE_Y25-54
+  AGE_AGGREGATE_Y55-64
+  AGE_AGGREGATE_YGE15
+  AGE_AGGREGATE_YGE65
+  AGE_YTHADULT_Y15-24
+  AGE_YTHADULT_Y15-64
+  AGE_YTHADULT_YGE15
+  AGE_YTHADULT_YGE25
+
+Likely youth (15–24) codes: ['AGE_10YRBANDS_Y15-24', 'AGE_AGGREGATE_Y15-24', 'AGE_YTHADULT_Y15-24', 'AGE_YTHADULT_Y15-64', 'AGE_YTHADULT_YGE15', 'AGE_YTHADULT_YGE25']
+✅ Youth filtering supported.
+
+========================================================================
+  SPECIAL CHECK 2 — Wages: what CUR variants exist and is PPP worth exposing?
+
+Default is LCU (local currency unit) — right for within-country analysis.
+PPP normalises across countries but requires a different interpretation.
+This check shows what CUR codes exist and how much data each has.
+
+CUR codes in DF_EAR_EMTA_SEX_CUR_NB for FRA: ['CUR_TYPE_LCU', 'CUR_TYPE_PPP', 'CUR_TYPE_USD']
+  CUR_TYPE_LCU: 9 annual rows for FRA
+  CUR_TYPE_PPP: 9 annual rows for FRA
+  CUR_TYPE_USD: 9 annual rows for FRA
+
+Decision after seeing output:
+  - If PPP rows exist and are non-trivial: consider exposing as a second canonical.
+  - If sparse or missing: keep LCU only and document why.
+
+
+========================================================================
+  SUMMARY — CANONICAL FLOWS
+
+  Concept                                   Selected flow                                       
+  ────────────────────────────────────────  ────────────────────────────────────────────────────
+  Unemployment Rate                         DF_UNE_DEAP_SEX_AGE_RT
+  Employment-to-Population Ratio            DF_EMP_DWAP_SEX_AGE_RT
+  Average Monthly Earnings (Wages)          DF_EAR_EMTA_SEX_CUR_NB
+  Labour Force Participation Rate (LFPR)    DF_EAP_DWAP_SEX_AGE_RT
+
+Record findings in: local-notes/execution/phase00-concept-discovery/results.md

@@ -1,0 +1,636 @@
+{
+  "schema_version": "1.0",
+  "instructions": "Ground truth values are placeholders (null). Before running the benchmark, pull the real value for each question directly from ILOSTAT (via your sdmx_client or the ILOSTAT web browser) and fill in 'values', 'has_data', 'has_break', and 'break_years'. Do not guess these numbers.",
+  "questions": [
+    {
+      "id": "q001",
+      "category": "answerable_clean",
+      "question": "What was Malaysia's unemployment rate in 2022?",
+      "entities": {
+        "countries": ["MYS"],
+        "indicator_theme": "employment",
+        "dataflow_id": "DF_UNE_DEAP_SEX_AGE_RT",
+        "start_year": 2022,
+        "end_year": 2022
+      },
+      "ground_truth": {
+        "has_data": null,
+        "values": null,
+        "as_of_date": null,
+        "has_break": null,
+        "break_years": null,
+        "correct_response_type": "exact_answer"
+      },
+      "notes": "Baseline single-point lookup, no complications."
+    },
+    {
+      "id": "q002",
+      "category": "answerable_clean",
+      "question": "What was the average monthly wage in Singapore in 2021?",
+      "entities": {
+        "countries": ["SGP"],
+        "indicator_theme": "wages",
+        "dataflow_id": "DF_EAR_EMTA_SEX_CUR_NB",
+        "start_year": 2021,
+        "end_year": 2021
+      },
+      "ground_truth": {
+        "has_data": null,
+        "values": null,
+        "as_of_date": null,
+        "has_break": null,
+        "break_years": null,
+        "correct_response_type": "exact_answer"
+      },
+      "notes": "SGP confirmed in DF_EAR_EMTA_SEX_CUR_NB (average monthly earnings of employees). Sample 2021 value ~4680. Verify unit (SGD) is surfaced correctly."
+    },
+    {
+      "id": "q003",
+      "category": "answerable_break",
+      "question": "How has the unemployment rate in Nigeria changed from 2015 to 2022?",
+      "entities": {
+        "countries": ["NGA"],
+        "indicator_theme": "employment",
+        "dataflow_id": "DF_UNE_3EAP_SEX_AGE_DSB_RT",
+        "start_year": 2015,
+        "end_year": 2022
+      },
+      "ground_truth": {
+        "has_data": null,
+        "values": null,
+        "as_of_date": null,
+        "has_break": true,
+        "break_years": ["2019"],
+        "correct_response_type": "warn_and_answer"
+      },
+      "notes": "Nigeria (NGA) confirmed SOURCE change in 2019: 'HS - General Household Survey' → 'HIES - Living Standards Survey'. Break falls within 2015–2022. The tool must disclose the methodology change rather than computing a clean trend."
+    },
+    {
+      "id": "q004",
+      "category": "answerable_break",
+      "question": "What has been the trend in Pakistan's wage growth over the last decade?",
+      "entities": {
+        "countries": ["PAK"],
+        "indicator_theme": "wages",
+        "dataflow_id": "DF_EAR_CMTA_SEX_CUR_NB",
+        "start_year": null,
+        "end_year": null
+      },
+      "ground_truth": {
+        "has_data": null,
+        "values": null,
+        "as_of_date": null,
+        "has_break": true,
+        "break_years": ["2011", "2013", "2016", "2018", "2020", "2021"],
+        "correct_response_type": "warn_and_answer"
+      },
+      "notes": "Pakistan (PAK) has confirmed SOURCE changes in DF_EAR_CMTA_SEX_CUR_NB — alternating between LFS and HIES multiple times from 2011 to 2021. No country swap needed. Tool must warn about methodology breaks before computing any trend."
+    },
+    {
+      "id": "q005",
+      "category": "unanswerable_no_data",
+      "question": "What is North Korea's unemployment rate in 2023?",
+      "entities": {
+        "countries": ["PRK"],
+        "indicator_theme": "employment",
+        "dataflow_id": null,
+        "start_year": 2023,
+        "end_year": 2023
+      },
+      "ground_truth": {
+        "has_data": false,
+        "values": null,
+        "as_of_date": null,
+        "has_break": false,
+        "break_years": null,
+        "correct_response_type": "abstain_no_data"
+      },
+      "notes": "North Korea does not report national survey data to ILOSTAT. ILO modelled estimates DO cover PRK — the tool must not use modelled estimates to answer as if it were real data. Correct behavior: state no national data is available and note that modelled estimates exist but should not be presented as survey data."
+    },
+    {
+      "id": "q006",
+      "category": "unanswerable_no_data",
+      "question": "What was the average wage in Malaysia in 1970?",
+      "entities": {
+        "countries": ["MYS"],
+        "indicator_theme": "wages",
+        "dataflow_id": null,
+        "start_year": 1970,
+        "end_year": 1970
+      },
+      "ground_truth": {
+        "has_data": false,
+        "values": null,
+        "as_of_date": null,
+        "has_break": false,
+        "break_years": null,
+        "correct_response_type": "abstain_no_data"
+      },
+      "notes": "Tests date-range-out-of-coverage. ILOSTAT returns HTTP 404 for this query. Tool should handle 404 as 'no data available for this period'."
+    },
+    {
+      "id": "q007",
+      "category": "unanswerable_wrong_entity",
+      "question": "What is the GDP of the ILO?",
+      "entities": {
+        "countries": [],
+        "indicator_theme": null,
+        "dataflow_id": null,
+        "start_year": null,
+        "end_year": null
+      },
+      "ground_truth": {
+        "has_data": false,
+        "values": null,
+        "as_of_date": null,
+        "has_break": false,
+        "break_years": null,
+        "correct_response_type": "abstain_no_data"
+      },
+      "notes": "Category error — ILO is an organization, not a country/economy, and doesn't have a GDP. Tests whether the agent recognizes the entity mismatch instead of substituting something plausible-sounding."
+    },
+    {
+      "id": "q008",
+      "category": "unanswerable_wrong_entity",
+      "question": "What is the literacy rate in Malaysia in 2022?",
+      "entities": {
+        "countries": ["MYS"],
+        "indicator_theme": null,
+        "dataflow_id": null,
+        "start_year": 2022,
+        "end_year": 2022
+      },
+      "ground_truth": {
+        "has_data": false,
+        "values": null,
+        "as_of_date": null,
+        "has_break": false,
+        "break_years": null,
+        "correct_response_type": "abstain_no_data"
+      },
+      "notes": "Literacy is a UNESCO/education indicator, out of scope for an employment+wages-only ILOSTAT MCP. Tests whether the agent correctly says 'not covered by this tool' rather than answering from its own training data and implying it came from ILOSTAT."
+    },
+    {
+      "id": "q009",
+      "category": "ambiguous",
+      "question": "What has wage growth looked like in Georgia over the past 5 years?",
+      "entities": {
+        "countries": ["GEO"],
+        "indicator_theme": "wages",
+        "dataflow_id": null,
+        "start_year": null,
+        "end_year": null
+      },
+      "ground_truth": {
+        "has_data": null,
+        "values": null,
+        "as_of_date": null,
+        "has_break": null,
+        "break_years": null,
+        "correct_response_type": "disambiguate"
+      },
+      "notes": "Country vs. US-state name collision. GEO (Georgia the country) confirmed present in CL_AREA and has wage data in DF_EAR_EMTA_SEX_CUR_NB. The disambiguation matters: if user means the country, real data exists; if user means the US state, nothing. Correct behavior: agent must ask or clarify which Georgia before attempting any lookup."
+    },
+    {
+      "id": "q010",
+      "category": "comparative",
+      "question": "Compare wage growth in France and Germany from 2020 to 2023.",
+      "entities": {
+        "countries": ["FRA", "DEU"],
+        "indicator_theme": "wages",
+        "dataflow_id": "DF_EAR_EMTA_SEX_CUR_NB",
+        "start_year": 2020,
+        "end_year": 2023
+      },
+      "ground_truth": {
+        "has_data": null,
+        "values": null,
+        "as_of_date": null,
+        "has_break": null,
+        "break_years": null,
+        "correct_response_type": "exact_answer"
+      },
+      "notes": "Both FRA and DEU confirmed in DF_EAR_EMTA_SEX_CUR_NB (average monthly earnings of employees). FRA data through 2023, DEU sample ~4329. Tests multi-entity retrieval and correct pairwise comparison."
+    },
+    {
+      "id": "q011",
+      "category": "comparative",
+      "question": "Which has a lower unemployment rate in 2022: Malaysia or Singapore?",
+      "entities": {
+        "countries": ["MYS", "SGP"],
+        "indicator_theme": "employment",
+        "dataflow_id": "DF_UNE_DEAP_SEX_AGE_RT",
+        "start_year": 2022,
+        "end_year": 2022
+      },
+      "ground_truth": {
+        "has_data": null,
+        "values": null,
+        "as_of_date": null,
+        "has_break": null,
+        "break_years": null,
+        "correct_response_type": "exact_answer"
+      },
+      "notes": "Year changed from 2023 to 2022 — MYS latest available is 2022, SGP has data through 2024. Using 2022 ensures both have data. Simple ranking comparison — checks the agent draws the correct conclusion from two correct numbers, not just that it retrieves them."
+    },
+    {
+      "id": "q012",
+      "category": "unanswerable_no_data",
+      "question": "What is the unemployment rate in Malaysia for 2027?",
+      "entities": {
+        "countries": ["MYS"],
+        "indicator_theme": "employment",
+        "dataflow_id": null,
+        "start_year": 2027,
+        "end_year": 2027
+      },
+      "ground_truth": {
+        "has_data": false,
+        "values": null,
+        "as_of_date": null,
+        "has_break": false,
+        "break_years": null,
+        "correct_response_type": "abstain_no_data"
+      },
+      "notes": "Future date. ILO modelled estimates DO include 2027 projections — tool must not use these to answer as if they were observed data. Correct response: no observed data exists for 2027; any figure would be a projection, not a survey result."
+    },
+    {
+      "id": "q013",
+      "category": "answerable_clean",
+      "question": "What was Germany's employment-to-population ratio in 2019?",
+      "entities": {
+        "countries": ["DEU"],
+        "indicator_theme": "employment",
+        "dataflow_id": "DF_EMP_2WAP_SEX_AGE_RT",
+        "start_year": 2019,
+        "end_year": 2019
+      },
+      "ground_truth": {
+        "has_data": null,
+        "values": null,
+        "as_of_date": null,
+        "has_break": null,
+        "break_years": null,
+        "correct_response_type": "exact_answer"
+      },
+      "notes": "DEU 2019 confirmed in DF_EMP_2WAP_SEX_AGE_RT (value ~59.4%). Note: 2WAP prefix indicates ILO modelled estimates — for Germany this is acceptable as the model is derived from official survey data. Provisional; verify if a survey-based DWAP flow exists."
+    },
+    {
+      "id": "q014",
+      "category": "answerable_clean",
+      "question": "What was the average monthly wage in France in 2022?",
+      "entities": {
+        "countries": ["FRA"],
+        "indicator_theme": "wages",
+        "dataflow_id": "DF_EAR_EMTA_SEX_CUR_NB",
+        "start_year": 2022,
+        "end_year": 2022
+      },
+      "ground_truth": {
+        "has_data": null,
+        "values": null,
+        "as_of_date": null,
+        "has_break": null,
+        "break_years": null,
+        "correct_response_type": "exact_answer"
+      },
+      "notes": "FRA confirmed in DF_EAR_EMTA_SEX_CUR_NB (average monthly earnings of employees, 2020–2023). Verify unit (EUR/month or LCU) is surfaced correctly."
+    },
+    {
+      "id": "q015",
+      "category": "answerable_clean",
+      "question": "What was Brazil's unemployment rate in 2018?",
+      "entities": {
+        "countries": ["BRA"],
+        "indicator_theme": "employment",
+        "dataflow_id": "DF_UNE_DEAP_SEX_AGE_RT",
+        "start_year": 2018,
+        "end_year": 2018
+      },
+      "ground_truth": {
+        "has_data": null,
+        "values": null,
+        "as_of_date": null,
+        "has_break": null,
+        "break_years": null,
+        "correct_response_type": "exact_answer"
+      },
+      "notes": "BRA 2018 confirmed in DF_UNE_DEAP_SEX_AGE_RT."
+    },
+    {
+      "id": "q016",
+      "category": "answerable_clean",
+      "question": "What was South Africa's youth unemployment rate in 2021?",
+      "entities": {
+        "countries": ["ZAF"],
+        "indicator_theme": "employment",
+        "dataflow_id": "DF_UNE_3EAP_SEX_AGE_GEO_RT",
+        "start_year": 2021,
+        "end_year": 2021
+      },
+      "ground_truth": {
+        "has_data": null,
+        "values": null,
+        "as_of_date": null,
+        "has_break": null,
+        "break_years": null,
+        "correct_response_type": "exact_answer"
+      },
+      "notes": "ZAF 2021 confirmed in DF_UNE_3EAP_SEX_AGE_GEO_RT. AGE code for youth: AGE_YTHBANDS_Y15-29 (ILO standard youth definition is 15–24, but 15–29 is the closest available band in this flow). When Kanza fills ground truth, use AGE_YTHBANDS_Y15-29."
+    },
+    {
+      "id": "q017",
+      "category": "answerable_clean",
+      "question": "What was Thailand's unemployment rate from 2015 to 2022?",
+      "entities": {
+        "countries": ["THA"],
+        "indicator_theme": "employment",
+        "dataflow_id": "DF_UNE_DEAP_SEX_AGE_RT",
+        "start_year": 2015,
+        "end_year": 2022
+      },
+      "ground_truth": {
+        "has_data": null,
+        "values": null,
+        "as_of_date": null,
+        "has_break": null,
+        "break_years": null,
+        "correct_response_type": "exact_answer"
+      },
+      "notes": "THA employment series confirmed clean — only one SOURCE ('LFS - Labour Force Survey') throughout 2015–2022. answerable_clean confirmed. Tests full time series retrieval."
+    },
+    {
+      "id": "q018",
+      "category": "answerable_break",
+      "question": "Has Nigeria's employment situation improved between 2010 and 2022? Show me the trend.",
+      "entities": {
+        "countries": ["NGA"],
+        "indicator_theme": "employment",
+        "dataflow_id": "DF_UNE_3EAP_SEX_AGE_DSB_RT",
+        "start_year": 2010,
+        "end_year": 2022
+      },
+      "ground_truth": {
+        "has_data": null,
+        "values": null,
+        "as_of_date": null,
+        "has_break": true,
+        "break_years": ["2011", "2019"],
+        "correct_response_type": "warn_and_answer"
+      },
+      "notes": "Same Nigeria flow as q003, wider range. Breaks at 2011 (HIES → HS) and 2019 (HS → HIES) both fall within 2010–2022. Tests that get_trend() warns rather than silently computing a slope across two SOURCE changes."
+    },
+    {
+      "id": "q019",
+      "category": "answerable_break",
+      "question": "What is the CAGR of Pakistan's employment rate from 2010 to 2020?",
+      "entities": {
+        "countries": ["PAK"],
+        "indicator_theme": "employment",
+        "dataflow_id": "DF_UNE_DEAP_SEX_AGE_RT",
+        "start_year": 2010,
+        "end_year": 2020
+      },
+      "ground_truth": {
+        "has_data": null,
+        "values": null,
+        "as_of_date": null,
+        "has_break": true,
+        "break_years": ["2012", "2013", "2016", "2018", "2020"],
+        "correct_response_type": "warn_and_answer"
+      },
+      "notes": "PAK has five SOURCE changes within 2010–2020 in DF_UNE_DEAP_SEX_AGE_RT — LFS and HIES alternating throughout. get_cagr() must warn before computing. Highly fragmented series."
+    },
+    {
+      "id": "q020",
+      "category": "answerable_break",
+      "question": "How have wages changed in Thailand over the past decade?",
+      "entities": {
+        "countries": ["THA"],
+        "indicator_theme": "wages",
+        "dataflow_id": "DF_EAR_EMTA_SEX_CUR_NB",
+        "start_year": null,
+        "end_year": null
+      },
+      "ground_truth": {
+        "has_data": null,
+        "values": null,
+        "as_of_date": null,
+        "has_break": true,
+        "break_years": ["2013", "2014"],
+        "correct_response_type": "warn_and_answer"
+      },
+      "notes": "Thailand (THA) confirmed SOURCE changes in DF_EAR_EMTA_SEX_CUR_NB: 2013 (LFS → HIES) and 2014 (HIES → LFS). Series alternates between two survey sources at these two points."
+    },
+    {
+      "id": "q021",
+      "category": "unanswerable_no_data",
+      "question": "What is Yemen's unemployment rate in 2023?",
+      "entities": {
+        "countries": ["YEM"],
+        "indicator_theme": "employment",
+        "dataflow_id": null,
+        "start_year": 2023,
+        "end_year": 2023
+      },
+      "ground_truth": {
+        "has_data": false,
+        "values": null,
+        "as_of_date": null,
+        "has_break": false,
+        "break_years": null,
+        "correct_response_type": "abstain_no_data"
+      },
+      "notes": "Yemen (YEM) confirmed: no survey unemployment data in ILOSTAT (404 on all unemployment flows). ILO modelled estimates DO exist for YEM — tool must not use those to answer as if they were survey data. Replaces original Somalia question, which turned out to have real survey data."
+    },
+    {
+      "id": "q022",
+      "category": "unanswerable_no_data",
+      "question": "What were average wages in Malaysia in 1960?",
+      "entities": {
+        "countries": ["MYS"],
+        "indicator_theme": "wages",
+        "dataflow_id": null,
+        "start_year": 1960,
+        "end_year": 1960
+      },
+      "ground_truth": {
+        "has_data": false,
+        "values": null,
+        "as_of_date": null,
+        "has_break": false,
+        "break_years": null,
+        "correct_response_type": "abstain_no_data"
+      },
+      "notes": "Far out of range. ILOSTAT returns HTTP 404 for dates this early."
+    },
+    {
+      "id": "q023",
+      "category": "unanswerable_wrong_entity",
+      "question": "What is the Gulf Cooperation Council's unemployment rate in 2022?",
+      "entities": {
+        "countries": [],
+        "indicator_theme": "employment",
+        "dataflow_id": null,
+        "start_year": 2022,
+        "end_year": 2022
+      },
+      "ground_truth": {
+        "has_data": false,
+        "values": null,
+        "as_of_date": null,
+        "has_break": false,
+        "break_years": null,
+        "correct_response_type": "abstain_no_data"
+      },
+      "notes": "GCC (Gulf Cooperation Council) confirmed: no code in CL_AREA. ILOSTAT organises by country, not regional blocs — GCC is not a valid area in this system. Replaces original EU question, which turned out to have aggregate codes (X92/X82) with real data. Note: category changed to unanswerable_wrong_entity since the issue is entity type, not missing data for a valid entity."
+    },
+    {
+      "id": "q024",
+      "category": "unanswerable_no_data",
+      "question": "What will Singapore's wages be in 2030?",
+      "entities": {
+        "countries": ["SGP"],
+        "indicator_theme": "wages",
+        "dataflow_id": null,
+        "start_year": 2030,
+        "end_year": 2030
+      },
+      "ground_truth": {
+        "has_data": false,
+        "values": null,
+        "as_of_date": null,
+        "has_break": false,
+        "break_years": null,
+        "correct_response_type": "abstain_no_data"
+      },
+      "notes": "Future year beyond modelled estimate range (ILO projections go to ~2027). No survey data exists. Tool must not forecast."
+    },
+    {
+      "id": "q025",
+      "category": "unanswerable_wrong_entity",
+      "question": "What is the inflation rate in Germany in 2022?",
+      "entities": {
+        "countries": ["DEU"],
+        "indicator_theme": null,
+        "dataflow_id": null,
+        "start_year": 2022,
+        "end_year": 2022
+      },
+      "ground_truth": {
+        "has_data": false,
+        "values": null,
+        "as_of_date": null,
+        "has_break": false,
+        "break_years": null,
+        "correct_response_type": "abstain_no_data"
+      },
+      "notes": "Inflation is a macroeconomic indicator (IMF/World Bank domain), not employment or wages. Tests whether the tool says 'not in scope' rather than answering from training data and attributing it to ILOSTAT."
+    },
+    {
+      "id": "q026",
+      "category": "unanswerable_wrong_entity",
+      "question": "What is the World Bank's unemployment rate?",
+      "entities": {
+        "countries": [],
+        "indicator_theme": null,
+        "dataflow_id": null,
+        "start_year": null,
+        "end_year": null
+      },
+      "ground_truth": {
+        "has_data": false,
+        "values": null,
+        "as_of_date": null,
+        "has_break": false,
+        "break_years": null,
+        "correct_response_type": "abstain_no_data"
+      },
+      "notes": "The World Bank is an organisation, not a country/economy. Parallels q007 (ILO GDP) — tests the same entity-type mismatch with a different organisation."
+    },
+    {
+      "id": "q027",
+      "category": "ambiguous",
+      "question": "What is the unemployment rate in Congo in 2021?",
+      "entities": {
+        "countries": ["COG", "COD"],
+        "indicator_theme": "employment",
+        "dataflow_id": null,
+        "start_year": 2021,
+        "end_year": 2021
+      },
+      "ground_truth": {
+        "has_data": null,
+        "values": null,
+        "as_of_date": null,
+        "has_break": null,
+        "break_years": null,
+        "correct_response_type": "disambiguate"
+      },
+      "notes": "Congo name collision: Republic of Congo (COG) vs. Democratic Republic of Congo (COD). COD has unemployment data (2020); COG returns 404. Correct behavior: ask which one, or explicitly state the assumption made."
+    },
+    {
+      "id": "q028",
+      "category": "ambiguous",
+      "question": "What are wages like in Guinea?",
+      "entities": {
+        "countries": ["GIN", "GNQ", "GNB"],
+        "indicator_theme": "wages",
+        "dataflow_id": null,
+        "start_year": null,
+        "end_year": null
+      },
+      "ground_truth": {
+        "has_data": null,
+        "values": null,
+        "as_of_date": null,
+        "has_break": null,
+        "break_years": null,
+        "correct_response_type": "disambiguate"
+      },
+      "notes": "Three 'Guinea' countries: Guinea (GIN), Equatorial Guinea (GNQ), Guinea-Bissau (GNB). GNB has wage data (2022); GIN and GNQ return 404. Correct behavior: identify the ambiguity and ask for clarification."
+    },
+    {
+      "id": "q029",
+      "category": "comparative",
+      "question": "Which country had higher wage growth between 2018 and 2022: Thailand or Vietnam?",
+      "entities": {
+        "countries": ["THA", "VNM"],
+        "indicator_theme": "wages",
+        "dataflow_id": "DF_EAR_EMTA_SEX_CUR_NB",
+        "start_year": 2018,
+        "end_year": 2022
+      },
+      "ground_truth": {
+        "has_data": null,
+        "values": null,
+        "as_of_date": null,
+        "has_break": null,
+        "break_years": null,
+        "correct_response_type": "exact_answer"
+      },
+      "notes": "Both THA and VNM confirmed in DF_EAR_CMTA_SEX_CUR_NB for 2018–2022. THA's wage breaks (2013, 2014) fall outside this range, so no methodology issue. Stays comparative/exact_answer."
+    },
+    {
+      "id": "q030",
+      "category": "comparative",
+      "question": "Compare unemployment trends in Spain and Italy from 2010 to 2023.",
+      "entities": {
+        "countries": ["ESP", "ITA"],
+        "indicator_theme": "employment",
+        "dataflow_id": "DF_UNE_DEAP_SEX_AGE_RT",
+        "start_year": 2010,
+        "end_year": 2023
+      },
+      "ground_truth": {
+        "has_data": null,
+        "values": null,
+        "as_of_date": null,
+        "has_break": null,
+        "break_years": null,
+        "correct_response_type": "exact_answer"
+      },
+      "notes": "Both ESP and ITA confirmed in DF_UNE_DEAP_SEX_AGE_RT through 2023. Long-range comparison across two Southern European countries. Tests trend retrieval and narrative comparison across a 13-year window."
+    }
+  ]
+}
