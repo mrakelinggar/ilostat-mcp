@@ -2,6 +2,43 @@
 
 ---
 
+## 2026-08-28 (continued) — Phase 1 QA + fixes + public push
+
+QA review of Phase 1 complete. Three findings; two fixed, one noted.
+
+**F1 fixed — `ann.type` vs `ann.id` for LAST_UPDATE lookup (`sdmx_client.py:154`):** The developer used `ann.id` to find the `LAST_UPDATE` annotation but ILOSTAT uses the `type` field (confirmed in Phase 0 discovery script). Silent failure — `last_updated` would have returned `""` for every flow. Fixed to `getattr(ann, "type", None) == "LAST_UPDATE"`.
+
+**F3 fixed — HTML not stripped from description (`sdmx_client.py:150`):** BeautifulSoup was declared in pyproject.toml but never imported or used. ILOSTAT descriptions can contain HTML tags. Fixed — description now passed through `BeautifulSoup(...).get_text(separator=" ", strip=True)`.
+
+**F2 noted — `is_modelled()` uses substring markers instead of digit-prefix rule (`indicators.py:37`):** Spec said to check `parts[2][0].isdigit()` (third `_`-split segment starts with digit, e.g. `DF_UNE_2EAP_…`). Developer used `_ILO_MODELLED` / `_MOD_` substring markers instead. Left as-is for now — both approaches are reasonable; verify against live catalog before Phase 3 wires `is_modelled` into server responses.
+
+**Bonus from QA:** Developer added a `FLOW_DIMS` registry to `indicators.py` (maps each canonical flow ID to `"age"` or `"cur"`). Not in spec but genuinely useful — Phase 2 can use it to auto-select the correct dimension without callers specifying it.
+
+19/19 tests still pass after fixes. Pushed to `origin/main` (private). Published `publish` branch → `public/main` (public repo). Private and public repos are now in sync with Phase 1.
+
+**Files:**
+- [execution/phase01/qa-01-review.md](execution/phase01/qa-01-review.md)
+
+---
+
+## 2026-08-28 — Phase 1: scaffold + data layer
+
+Built and committed all Phase 1 files. 19/19 integration tests pass.
+
+**Files created:** `pyproject.toml`, `src/ilostat_mcp/indicators.py`, `src/ilostat_mcp/sdmx_client.py`, `tests/test_sdmx_client.py`, `tests/conftest.py`, `README.md`, `uv.lock`.
+
+**Issues resolved during implementation:**
+
+1. **DSD fetch / Cloudflare challenge** — sdmx1 fetches the DSD with `?references=all` when using dict keys. ILOSTAT's Cloudflare protection blocks this as a bot until challenge-solving completes (30–90s). Added session-scoped conftest fixture to pre-warm the DSD cache before tests run — pytest doesn't apply its per-test timeout to fixtures, so cloudscraper has time to solve the challenge. All individual tests then use the cache and complete in <5s each.
+
+2. **`codelist.items()` bug** — sdmx1's `Codelist.items` is a plain dict, not a method. Fixed to `codelist.items.items()`.
+
+3. **pandas 3.x dtype** — `astype(str)` returns `StringDtype` not `object`. Fixed test assertion to use `pd.api.types.is_string_dtype()`.
+
+Pushed to `origin/main` (private repo).
+
+---
+
 ## 2026-08-28 (continued) — Phase 0d/0e pre-Phase 1 design decisions
 
 Ran `phase0de_api_checks.py` and locked all remaining decisions blocking Phase 1. Full record in `phase0de_decisions.md`.
