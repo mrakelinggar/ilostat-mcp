@@ -22,6 +22,7 @@ import cloudscraper
 import pandas as pd
 import sdmx
 import sdmx.message
+from bs4 import BeautifulSoup
 from requests.exceptions import HTTPError
 
 from ilostat_mcp.indicators import is_modelled
@@ -147,11 +148,13 @@ def get_indicator_metadata(flow_id: str) -> dict:
 
     flow = flows[flow_id]
     name = str(flow.name) if flow.name else ""
-    description = str(flow.description) if getattr(flow, "description", None) else ""
+    raw_desc = str(flow.description) if getattr(flow, "description", None) else ""
+    description = BeautifulSoup(raw_desc, "html.parser").get_text(separator=" ", strip=True)
 
     last_updated = ""
     for ann in getattr(flow, "annotations", []):
-        if getattr(ann, "id", None) == "LAST_UPDATE":
+        # sdmx1 uses ann.type for the annotation classification (e.g. "LAST_UPDATE")
+        if getattr(ann, "type", None) == "LAST_UPDATE":
             last_updated = str(ann.text) if ann.text else ""
             break
 
