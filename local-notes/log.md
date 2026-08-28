@@ -2,6 +2,12 @@
 
 ---
 
+## TODO — start of next session
+- **Manually verify Phase 2 via MCP Inspector or Claude Desktop before Phase 3.**
+  Run `uv run fastmcp dev src/ilostat_mcp/server.py` and call each tool once to confirm the server starts, tools respond with real data, and `[]` is returned for PRK. Phase 3 should not start until this passes.
+
+---
+
 ## 2026-08-28 (continued) — Phase 1 QA + fixes + public push
 
 QA review of Phase 1 complete. Three findings; two fixed, one noted.
