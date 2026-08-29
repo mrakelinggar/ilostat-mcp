@@ -1,6 +1,6 @@
 # MCP — FastMCP vs Official SDK
 
-*Learned while building ilostat-mcp. Last updated: 2026-08-29.*
+*Last updated: 2026-08-29.*
 
 ---
 
@@ -17,32 +17,33 @@ but this is essentially the v1 API and hasn't kept pace with the standalone v2.
 
 ---
 
-## Why we use standalone `fastmcp>=2.0,<3.0`
+## When to use the standalone `fastmcp` package
 
 FastMCP v2 gives cleaner decorator-based registration, better type coercion,
 and better error handling out of the box. The official SDK's `FastMCP` shim is
-comparatively stale.
+comparatively stale. Use the standalone package for any new MCP server project.
 
 ```python
-# What we use
 from fastmcp import FastMCP
 
-mcp = FastMCP("ilostat-mcp")
+mcp = FastMCP("my-server")
 
 @mcp.tool()
-def get_countries() -> list[dict]:
+def fetch_data(query: str) -> list[dict]:
     ...
 
-@mcp.resource("ilostat://system-prompt")
+@mcp.resource("myserver://system-prompt")
 def system_prompt() -> str:
+    ...
+
+@mcp.prompt()
+def summarise(topic: str) -> str:
     ...
 ```
 
-No meaningful downside for a local-install MCP server.
-
 ---
 
-## Important: version pinning
+## Version pinning
 
 `fastmcp>=2.0` is too loose — if v3.0 ships with breaking changes the build
 breaks silently. Always pin with an upper bound: `fastmcp>=2.0,<3.0`.

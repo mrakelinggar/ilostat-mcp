@@ -1,6 +1,6 @@
 # Software Engineering — It's More Than Coding
 
-*Learned while building ilostat-mcp. Last updated: 2026-08-29.*
+*Last updated: 2026-08-29.*
 
 ---
 
@@ -93,8 +93,8 @@ more expensive than fixing it later.
 
 Judgment comes from accumulated failures. You get it by shipping things,
 watching them break, and doing post-mortems honestly. There's no shortcut —
-but building production-grade projects (like this one) deliberately, instead
-of just making things work, accelerates it.
+but building things deliberately to a production standard — not just making
+them work — accelerates it significantly.
 
 ---
 

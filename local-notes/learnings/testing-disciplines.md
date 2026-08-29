@@ -1,6 +1,6 @@
 # Testing Disciplines
 
-*Learned while building ilostat-mcp. Last updated: 2026-08-29.*
+*Last updated: 2026-08-29.*
 
 ---
 
@@ -26,27 +26,27 @@ stop — it's not enough.
 
 ### Edge case testing
 What happens at the boundaries? Empty inputs, maximum values, dates far in
-the past or future, countries with no data, years out of range. Examples from
-this project: North Korea (no data), year 1960 (before ILOSTAT coverage),
-`start_year > end_year` (inverted range).
+the past or future, IDs that don't exist, ranges that produce no results.
+Examples: a user ID of 0, a date range where start > end, a search term
+with no matches, a request for data that exists in the schema but not in
+the database.
 
 ### Negative testing
-What happens when you deliberately do the wrong thing? Pass an invalid country
-code, an unrecognised `age_group` value, more than 3 countries to a prompt
-that caps at 3. The system should fail explicitly and helpfully, not silently
-or cryptically.
+What happens when you deliberately do the wrong thing? Pass an invalid
+parameter, exceed a limit, use a value from the wrong set. The system should
+fail explicitly and helpfully — not silently or cryptically.
 
 ### Integration testing
-Does it hold together when all the parts run at once? A unit test checks
-`yoy()` in isolation. An integration test checks that `get_yoy_change` calls
-`get_time_series`, passes the right parameters, handles an empty result, and
-surfaces the break warning correctly — all in one flow.
+Does it hold together when all the parts run at once? A unit test checks a
+function in isolation. An integration test checks that function A calls
+function B with the right parameters, handles an empty result, and surfaces
+the right output — all in one flow, against real dependencies.
 
 ### Resilience testing (chaos testing)
-What happens when dependencies fail? Kill the API mid-request. Throttle the
-network to simulate a slow response. Return a malformed response. This is
-where you find the "it works on my machine" bugs — things that only break in
-production because production has unreliable dependencies.
+What happens when dependencies fail? Kill an external API mid-request.
+Throttle the network to simulate a slow response. Return a malformed payload.
+This is where you find the "it works on my machine" bugs — things that only
+break in production because production has unreliable dependencies.
 
 ### Regression testing
 Does fixing one thing break something that was working? This is why test suites
@@ -56,15 +56,14 @@ this, you're re-testing everything by hand on every change.
 
 ---
 
-## The Phase 4.5 principle
+## The hardening phase principle
 
-You can only see certain failure modes after the full system exists. A break
-that's invisible in Phase 2 becomes obvious once Phase 3's detection logic is
-running against it. This is why a dedicated resilience audit phase (Phase 4.5
-in this project) runs after the feature-complete milestone but before shipping.
-
-In software engineering this is called a **hardening phase** or **resilience
-review**. Common in mature engineering teams.
+You can only see certain failure modes after the full system exists. A gap
+that's invisible when one component is built in isolation becomes obvious once
+the rest of the system is running against it. This is why mature teams run a
+dedicated **hardening phase** (also called a resilience review) after the
+feature-complete milestone but before shipping — specifically to catch these
+cross-component failures that individual-phase testing missed.
 
 ---
 
@@ -88,18 +87,20 @@ The goal is fixing the gap so it doesn't happen again.
 
 ---
 
-## Practical rules (from this project's CLAUDE.md)
+## Production testing rules
 
 - Tests must be meaningful — verify correctness against known values, not
   just "does it run without crashing"
 - Every error path has a test — not just the happy path
-- Live API tests are intentional — mocks hide real behaviour
+- Live/integration tests against real dependencies are intentional — mocks
+  hide real behaviour and give false confidence
 - Tests pass before any commit to main
-- CI runs lint → type check → tests on every push
+- CI runs lint → type check → tests on every push (see [[cicd-github-actions]])
 
 ---
 
 ## Related
 
-- [[observability]] — how you see what's happening in production when things go wrong
+- [[observability]] — how you see what's happening in production when tests miss something
+- [[cicd-github-actions]] — how tests run automatically on every push
 - [[software-eng-breadth]] — testing is one of many non-coding skills in the job

@@ -1,6 +1,6 @@
 # CI/CD and GitHub Actions
 
-*Learned while building ilostat-mcp. Last updated: 2026-08-29.*
+*Last updated: 2026-08-29.*
 
 ---
 
@@ -110,7 +110,7 @@ release tag is pushed.
 
 ```
 git tag v1.0.0
-git push public v1.0.0
+git push origin v1.0.0
     → publish.yml fires
     → build the package
     → publish to PyPI
