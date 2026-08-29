@@ -2,8 +2,13 @@
 
 Model Context Protocol server exposing ILOSTAT employment and wage data to AI
 agents, with methodology-break detection and a hallucination benchmark as its
-core differentiators. Built by Rake Kanza as a portfolio project targeting
-senior data/AI engineering roles and funded PhD applications.
+core differentiators. Built by Rake Kanza to production-grade standards,
+targeting senior data/AI engineering roles and funded PhD applications.
+
+**Quality bar:** every decision, every line of code, and every test must meet
+the standard of passing code review at a top-tier tech company. "It works on
+my machine" is not the bar. "A senior engineer I've never met can read this,
+trust it, and maintain it" is the bar.
 
 ---
 
@@ -62,6 +67,100 @@ senior data/AI engineering roles and funded PhD applications.
 
 ---
 
+## Production standards (non-negotiable)
+
+This is not a hobby project. Every standard below applies to every commit.
+
+### Code quality
+- **Full type annotations** on all public functions — `mypy` must pass clean.
+  No `Any` unless genuinely unavoidable and explicitly commented why.
+- **Linting and formatting** via `ruff` (replaces flake8 + isort + black).
+  Zero warnings. Configured in `pyproject.toml`.
+- **No bare `except:`** — always catch a specific exception type. Catching
+  `Exception` is acceptable only as a last resort with a comment explaining why.
+- **No magic numbers or strings** — named constants in `indicators.py` or
+  module-level. A reader should never have to guess what `"AGE_YTHADULT_YGE15"`
+  means without context.
+- **Every public function has a docstring** — what it does, parameters, return
+  type, what it raises. Not what the code literally does line by line — what a
+  caller needs to know to use it correctly.
+
+### Testing
+- **Tests must be meaningful** — verify correctness against known values, not
+  just "does it run without crashing." `test_analysis.py` checks math against
+  hand-calculated results. `test_breaks.py` checks against real ILOSTAT data.
+- **Every error path has a test** — not just the happy path. If a function
+  raises on bad input, there is a test that confirms it raises with the right
+  message.
+- **Live API tests are intentional** — mocks hide real ILOSTAT behavior.
+  Accept the latency; the tests are more trustworthy for it.
+- **Tests pass before any commit to main.** No exceptions.
+
+### CI/CD
+- **GitHub Actions** runs on every push and PR: lint → type check → tests.
+  A failing CI pipeline blocks the commit.
+- Configured in `.github/workflows/`.
+
+### Observability
+
+Two pillars: **structured logs** and **distributed traces**. Metrics are deferred
+to a future version when the MCP has real traffic to aggregate.
+
+**Structured logging (`structlog`):**
+- Use `structlog` for structured JSON logs — not plain text strings, not bare
+  `print()`. Every log event is a dict: timestamp, level, logger, and context
+  fields specific to the event.
+- **Every ILOSTAT API call** logs at DEBUG: `flow_id`, `country`, `http_status`,
+  `duration_ms`.
+- **Every tool call** logs at INFO: `tool`, `inputs`, `outcome` (success / empty /
+  error), `duration_ms`.
+- **Log levels:** DEBUG for API internals, INFO for tool-level events, WARNING for
+  recoverable errors, ERROR for unexpected failures. Never bare `print()`.
+
+**Distributed tracing (OpenTelemetry → Honeycomb):**
+- Every tool call is an OpenTelemetry **span** with start time, end time, input
+  attributes, and status. Spans nest — a `labor_market_snapshot` call shows a
+  waterfall of every tool and API call it triggered, with timing on each.
+- Backend: **Honeycomb** (free tier). No Docker, cloud-hosted, professional UI,
+  suitable for article screenshots and README.
+- OTel exporter fails silently when offline — never breaks the MCP due to missing
+  connectivity.
+- Instrumentation lives in `server.py` (tool spans) and `sdmx_client.py` (API
+  spans). No OTel code anywhere else.
+- **Benchmark observability:** `run_benchmark.py` writes a structured per-question
+  log — question ID, tools called in order with inputs, final answer, score,
+  latency. Plain JSON file alongside the results table.
+
+### Error handling
+- **Every public function has an explicit contract:** what it returns on success,
+  what it raises on failure, what an empty result means. This is documented in
+  the docstring, not assumed.
+- **No silent failures.** If something goes wrong, it raises or returns a
+  structured error field. Swallowing exceptions and returning empty is only
+  acceptable when empty is the documented meaning (e.g. "no data for this
+  country").
+- **All user-facing error messages are plain English** written for Claude to
+  relay to the user — not Python exception names, not stack traces.
+- **Infrastructure failures surface actionably:** "ILOSTAT API timed out —
+  try again" is a good error. `requests.exceptions.Timeout` is not.
+
+### Resilience
+- **Request timeout** on all ILOSTAT API calls. A hung request is worse than
+  a failed one.
+- **Input validation at the tool boundary** (in `server.py`) before any API
+  call. Never pass malformed input to the SDMX client.
+- **Failure modes are documented** in every phase plan under a "failure modes"
+  section. Phase 4.5 (Resilience Audit) re-examines all of them once the full
+  system exists.
+
+### Dependencies and versioning
+- **Semantic versioning** (`MAJOR.MINOR.PATCH`) in `pyproject.toml`.
+- **Dependencies have upper bounds** — `fastmcp>=2.0,<3.0` not `fastmcp>=2.0`.
+  Prevents silent breakage when upstream releases a major version.
+- **`uv.lock` is committed** for reproducible installs.
+
+---
+
 ## Locked scope and decisions (do not silently re-litigate these)
 
 | Decision | Value |
@@ -74,6 +173,9 @@ senior data/AI engineering roles and funded PhD applications.
 | Data storage | None — every call hits ILOSTAT's live SDMX API. No local snapshot, no database. |
 | Distribution | Local install via `pip`/`uvx`, no hosted remote server for v1 |
 | Verbosity/reasoning exposure | Rely on the MCP client's native tool-call panel (Claude Desktop, etc.). No custom `explain` flag or server-side reasoning field — deferred to v2 if ever. |
+| Structured logging | `structlog` — JSON output, never bare `print()` or stdlib `logging` with plain-text formatter |
+| Distributed tracing | OpenTelemetry SDK → Honeycomb (free tier). No Jaeger, no other backend. Exporter fails silently offline. |
+| Metrics | Deferred — future version when the MCP has real traffic to aggregate |
 | Differentiators (v1 scope, both required) | (1) Methodology-break detection, (2) hallucination benchmark comparing bare-LLM vs. MCP-equipped agent |
 
 If a change to any of these is proposed mid-build, flag it explicitly as a
@@ -121,8 +223,14 @@ before starting a session, update it before ending one. `log.md` gets a dated
 entry every working session, even a short one ("2026-07-23: scaffolded
 sdmx_client.py, confirmed sdmx1 pulls a real ILOSTAT employment series").
 
-`local-notes/` (covering both `plan/` and `execution/`) and `CLAUDE.md` are
-committed to the **private repo only**. They are excluded from the public
+`local-notes/learnings/` holds cross-project knowledge captured during
+sessions — one file per concept, plain English, written for your future self.
+At the end of every session where a new concept was learned or meaningfully
+deepened, it gets captured here. This feeds an Obsidian vault separately
+maintained outside the project. Index is at `local-notes/learnings/_index.md`.
+
+`local-notes/` (covering `plan/`, `execution/`, and `learnings/`) and `CLAUDE.md`
+are committed to the **private repo only**. They are excluded from the public
 repo via the `publish` branch's `.gitignore`. See "Repo setup" below.
 
 ---
@@ -207,8 +315,9 @@ function -> add to `analysis/`, register one new tool in `server.py`. Never let
 
 ## Prompts
 
-- `labor_market_snapshot(country)` — chains search + fetch + YoY/trend into one
-  packaged workflow
+- `labor_market_snapshot(countries)` — accepts 1–3 country names or ISO-3 codes;
+  chains search + fetch + YoY/trend into one packaged workflow. Raises on >3
+  countries, unresolvable names, and ambiguous names (surfaces all candidates).
 
 ---
 
@@ -275,3 +384,9 @@ Full methodology lives in `benchmark/BENCHMARK_SCHEMA.md` and
 - No fabricated ground-truth values in the benchmark JSON — pull them from
   the live API by hand
 - No silent trend/CAGR computation across a detected methodology break
+- No `print()` statements in production code — use `logging`
+- No untyped public functions — every parameter and return type is annotated
+- No swallowing exceptions silently unless empty is the documented return value
+- No merging to main with a failing CI pipeline
+- No shipping a feature without a test for its error path, not just its happy path
+- No magic strings or numbers in business logic — named constants only

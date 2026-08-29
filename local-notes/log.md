@@ -3,8 +3,54 @@
 ---
 
 ## TODO — start of next session
-- **Manually verify Phase 2 via MCP Inspector or Claude Desktop before Phase 3.**
-  Run `uv run fastmcp dev src/ilostat_mcp/server.py` and call each tool once to confirm the server starts, tools respond with real data, and `[]` is returned for PRK. Phase 3 should not start until this passes.
+- **Build Phase 2b** — see `plan/phase02/phase_2b_plan.md` for full task list.
+- **Verify Phase 2 + 2b together** in a single test pass after Phase 2b is built.
+  Phase 2b doesn't change Phase 2 tool behaviour, so one pass covers both.
+  Checklist:
+  - 4 original tools respond with real data; `[]` returned for PRK
+  - `ilostat://system-prompt`, `ilostat://codelists/area`, `ilostat://codelists/indicator` all load
+  - `get_time_series` with `age_group="youth"` returns correct youth band for ZAF
+  - PAK wages (`DF_EAR_CMTA_SEX_CUR_NB`) and DEU emp-to-pop (`DF_EMP_2WAP_SEX_AGE_RT`) return data
+  Phase 3 should not start until this passes.
+
+---
+
+## 2026-08-29
+
+Audit of all three MCP primitives (resources, tools, prompts) against the full
+benchmark question set. Found three categories of gap not covered by existing phases:
+
+1. `FLOW_DIMS` in `indicators.py` is missing four flows that benchmark questions
+   use — any call to `get_time_series` with those flows silently sends wrong
+   dimensions. Correctness bug, not a missing feature.
+
+2. No mechanism to request youth-band data — the tool has no `age_group` param,
+   so q016 (South Africa youth unemployment) can't be answered correctly. Decided:
+   add optional `age_group` param (`"total"` / `"youth"`) to the tool; mapping lives
+   in `server.py`, `sdmx_client.py` unchanged.
+
+3. Two specified resources (`ilostat://codelists/area`, `ilostat://codelists/indicator`)
+   were never built in Phase 2. Also decided: `codelists/indicator` contains the
+   4 canonical flows (theme, ID, title) — gives the agent upfront knowledge of what
+   flows exist without relying on search.
+
+4. `labor_market_snapshot` prompt and `COUNTRY_CURRENCY` map assigned to Phase 4.
+
+All gaps captured in Phase 2b plan. ROADMAP updated with Phase 2b section.
+
+Added Phase 4.5 (Resilience Audit) to ROADMAP — cross-phase hardening after
+feature-complete, before benchmark.
+
+Added observability stack to CLAUDE.md locked decisions: structlog for
+structured JSON logs, OpenTelemetry → Honeycomb for distributed tracing,
+metrics deferred. Observability is a Phase 4.5 deliverable.
+
+Updated CLAUDE.md production standards section with full quality bar.
+
+Created `local-notes/learnings/` — cross-project knowledge capture:
+mcp-fundamentals, mcp-fastmcp, testing-disciplines, observability,
+software-eng-breadth. Rule: capture any meaningfully learned concept before
+closing a session.
 
 ---
 

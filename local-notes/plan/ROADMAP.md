@@ -141,6 +141,28 @@ Execution notes: `execution/phase02/`
 
 ---
 
+### Phase 2b — MCP completeness fixes
+
+**Goal:** Close gaps found in audit before Phase 3 locks the `get_time_series` interface.
+
+Decisions locked:
+- `age_group` optional param on `get_time_series`: `"total"` (adults 15+) or `"youth"` (15–29)
+- `ilostat://codelists/indicator` contains the 4 canonical flows with theme name, flow ID, title
+
+Outputs:
+- `indicators.py` — 4 missing benchmark flows added to `FLOW_DIMS`; `"2WAP"` added to `_MODELLED_MARKERS`
+- `sdmx_client.py` — request timeout (30s); plain-English errors for `ConnectionError`, `Timeout`, 429, 500/503; `get_countries` and `search_indicators` raise on API failure instead of returning empty
+- `server.py` — `age_group` param on `get_time_series`; year-order validation; `age_group` validation; 2 new resource endpoints
+- `resources.py` — `CANONICAL_FLOWS` constant for indicator codelist resource
+- Resources live: `ilostat://codelists/area`, `ilostat://codelists/indicator`
+- Pre-task discovery: GEO dimension behavior on `DF_UNE_3EAP_SEX_AGE_GEO_RT` (may affect FLOW_DIMS design)
+- Combined Phase 2 + 2b verification pass: `fastmcp dev` tool checks + Claude Desktop sanity pass
+
+Plan: `plan/phase02/phase_2b_plan.md`
+Execution notes: `execution/phase02/` (same folder as Phase 2)
+
+---
+
 ### Phase 3 — Break detection
 
 **Goal:** Core differentiator #1 complete and tested.
@@ -159,13 +181,93 @@ Execution notes: `execution/phase03/`
 
 **Goal:** Full 7-tool list working.
 
+Design decisions to lock before building:
+- `get_yoy_change`, `get_cagr`, `get_trend` must each accept the same `age_group`
+  param as `get_time_series` (`"total"` / `"youth"`) — they all fetch a time series
+  internally, so omitting the param means derived stats can only operate on adult
+  totals even when the user asked about youth. Consistent interface; same mapping
+  logic as Phase 2b.
+- `labor_market_snapshot` accepts a list of 1–3 countries (name or ISO-3 code),
+  no optional indicator field — always returns the full snapshot.
+
+Error contract for `labor_market_snapshot`:
+- More than 3 countries → raise `ValueError` immediately, before any API call.
+  Message names the count and lists what was passed.
+- Country name not found after `get_countries()` lookup → raise `ValueError`
+  per unresolved name. Message written for Claude to relay to the user in plain English.
+- Ambiguous name (e.g. "Congo" matches COG and COD) → raise `ValueError` listing
+  all candidates with their ISO-3 codes so the user can pick.
+- Partial failure (2 of 3 countries resolve, 1 doesn't) → return results for the
+  resolved countries plus a structured error field for the failed one. Do not
+  silently drop it.
+- All error messages are written for Claude to relay — plain English, not stack
+  traces or code identifiers.
+
 Outputs:
 - `src/ilostat_mcp/analysis/growth.py` — `yoy()`, `cagr()`, `trend()` pure functions
 - `src/ilostat_mcp/analysis/__init__.py`
-- Tools wired: `get_yoy_change`, `get_cagr`, `get_trend`
+- Tools wired: `get_yoy_change`, `get_cagr`, `get_trend` (all with `age_group` param)
+- `labor_market_snapshot(countries)` prompt — accepts 1–3 country names/codes;
+  chains search + fetch + YoY/trend; full error contract above
+- `COUNTRY_CURRENCY` map in `indicators.py` — surfaces ISO 4217 symbol alongside LCU label in wage results
 - `tests/test_analysis.py` — math verified against hand-calculated cases
 
 Execution notes: `execution/phase04/`
+
+---
+
+### Phase 4.5 — Resilience Audit
+
+**Goal:** Harden the full system before the benchmark runs against it. Find and
+fix failure modes that only become visible once all phases exist — things that
+were invisible in Phase 2 but surface when Phase 3's break detection or Phase 4's
+derived stats are running on top.
+
+**Why here:** Can't audit what doesn't exist. The full tool chain (7 tools, prompt,
+break detection, derived stats) must be complete before this phase can be meaningful.
+Benchmark results are more trustworthy if the system is hardened first.
+
+**What this phase does:**
+
+1. **Cross-phase gap analysis** — re-read every phase's code asking "what can go
+   wrong here that we didn't see when we built it?" Each module gets a fresh-eyes
+   failure mode sweep.
+
+2. **End-to-end trace** — walk every request path from prompt input → tool chain
+   → SDMX API → response. At each step: what breaks silently? What produces a
+   wrong answer without raising? What does the agent see if it fails?
+
+3. **Adversarial input testing** — malformed, boundary, and unexpected inputs to
+   every tool and the prompt. Examples: empty keyword, nonsense dataflow ID,
+   start_year in the future, country code that exists in CL_AREA but has no data
+   for any flow, `age_group="youth"` on a wage flow.
+
+4. **Dependency failure simulation** — ILOSTAT API down, timeout, rate limited,
+   returns unexpected SDMX shape. Confirm every failure surfaces a plain-English
+   message to Claude, not a raw traceback.
+
+5. **Break detection edge cases** — single-observation series, series with all
+   observations from the same source, series where every observation is a break,
+   range that starts or ends exactly on a break year.
+
+6. **Fix all gaps found** — implement missing resilience measures. Document any
+   gaps that are intentionally deferred to v2 and why.
+
+**Output:**
+- Gap analysis doc in `execution/phase04.5/`
+- Fixes applied across whichever source files they belong to
+- Updated tests where new failure modes warrant them
+- `structlog` integrated throughout — structured JSON logs replacing all bare
+  `logging` calls in `server.py` and `sdmx_client.py`
+- OpenTelemetry instrumentation in `server.py` (tool spans) and `sdmx_client.py`
+  (API spans), exporting to Honeycomb free tier
+- Benchmark run logging: per-question structured JSON trace alongside results table
+- `pyproject.toml` updated with observability deps:
+  `structlog`, `opentelemetry-sdk`, `opentelemetry-exporter-otlp`
+
+Plan: `plan/phase04.5/phase_4.5_plan.md` (written at the start of this phase,
+after Phase 4 is complete and the full system is visible)
+Execution notes: `execution/phase04.5/`
 
 ---
 
