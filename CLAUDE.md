@@ -238,6 +238,12 @@ who has never heard of this project. If an example is needed to illustrate a
 concept, use a plain generic example — not one tied to ILOSTAT, MCP, or any
 specific implementation detail of this project.
 
+**`WRITING_MATERIALS.md`** tracks article ideas worth writing — practitioner-
+level pieces grounded in real decisions from this project. Each session, if a
+technical decision or finding surfaces that would make a strong article (not
+intro/tutorial content — something a senior engineer would find valuable),
+add it there with a hook and what makes it substantive.
+
 `local-notes/` (covering `plan/`, `execution/`, and `learnings/`) and `CLAUDE.md`
 are committed to the **private repo only**. They are excluded from the public
 repo via the `publish` branch's `.gitignore`. See "Repo setup" below.
