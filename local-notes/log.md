@@ -49,8 +49,14 @@ Updated CLAUDE.md production standards section with full quality bar.
 
 Created `local-notes/learnings/` — cross-project knowledge capture:
 mcp-fundamentals, mcp-fastmcp, testing-disciplines, observability,
-software-eng-breadth. Rule: capture any meaningfully learned concept before
-closing a session.
+software-eng-breadth, cicd-github-actions. Rule: capture any meaningfully
+learned concept before closing a session.
+
+Added Phase 1.5 (CI/CD — GitHub Actions) to ROADMAP — inserted between
+Phase 1 and Phase 2b. Must be done before Phase 2b. Two jobs: quality
+(ruff + mypy) then tests (pytest vs live ILOSTAT). CD stub (publish.yml)
+created now, fully wired in Phase 6. Pre-task discovery: confirm live API
+tests work from GH Actions IPs (Cloudflare risk).
 
 ---
 

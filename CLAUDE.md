@@ -176,6 +176,8 @@ to a future version when the MCP has real traffic to aggregate.
 | Structured logging | `structlog` — JSON output, never bare `print()` or stdlib `logging` with plain-text formatter |
 | Distributed tracing | OpenTelemetry SDK → Honeycomb (free tier). No Jaeger, no other backend. Exporter fails silently offline. |
 | Metrics | Deferred — future version when the MCP has real traffic to aggregate |
+| CI | GitHub Actions — two jobs: `quality` (ruff + mypy, fast) then `tests` (pytest vs live ILOSTAT API). Tests only run if quality passes. |
+| CD | GitHub Actions `publish.yml` — PyPI publish on version tag, using Trusted Publishing (OIDC, no stored secrets). Configured in Phase 6. |
 | Differentiators (v1 scope, both required) | (1) Methodology-break detection, (2) hallucination benchmark comparing bare-LLM vs. MCP-equipped agent |
 
 If a change to any of these is proposed mid-build, flag it explicitly as a

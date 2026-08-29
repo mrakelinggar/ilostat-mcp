@@ -127,6 +127,33 @@ Execution notes: `execution/phase01/`
 
 ---
 
+### Phase 1.5 — CI/CD with GitHub Actions
+
+**Goal:** Every commit from Phase 2b onward is automatically linted,
+type-checked, and tested before it can merge. Quality gate in place before
+more features are built.
+
+**Why here:** CI set up retroactively is a checkbox, not a gate. Set it up
+now so the pipeline actually catches things.
+
+Pre-task discovery:
+- Confirm live ILOSTAT API tests work from GitHub Actions IPs (Cloudflare
+  may block shared cloud IPs). Fallback: mark live tests, skip in CI.
+
+Outputs:
+- `.github/workflows/ci.yml` — two jobs: `quality` (ruff + mypy, seconds)
+  then `tests` (pytest against live ILOSTAT API, minutes). Tests job only
+  runs if quality passes.
+- `.github/workflows/publish.yml` — stub only. Trigger: version tag push.
+  Full implementation in Phase 6.
+- Branch protection on `main` (private repo) — require `quality` job to pass
+- Fix any ruff/mypy failures found in existing Phase 1 code
+
+Plan: `plan/phase01.5/phase_1.5_plan.md`
+Execution notes: `execution/phase01.5/`
+
+---
+
 ### Phase 2 — Server + basic tools
 
 **Goal:** Working MCP in Claude Desktop; no break detection yet.
