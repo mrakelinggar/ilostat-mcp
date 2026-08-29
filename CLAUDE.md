@@ -240,10 +240,10 @@ repo via the `publish` branch's `.gitignore`. See "Repo setup" below.
 Two GitHub repos, one local directory:
 
 **Private repo (`ilostat-mcp-private`)** — full development workspace.
-- Remote alias: `private`
+- Remote alias: `origin` (was intended to be `private` — actual alias is `origin`)
 - Contains everything: `CLAUDE.md`, `local-notes/`, `.claude/`, source, tests, benchmark.
 - `.gitignore` excludes only build artifacts (`__pycache__`, `.venv`, `dist`, etc.).
-- Push here after every working session: `git push private main`
+- Push here after every working session: `git push origin main`
 
 **Public repo (`ilostat-mcp`)** — portfolio-facing, clean.
 - Remote alias: `public`
