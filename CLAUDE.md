@@ -231,6 +231,13 @@ At the end of every session where a new concept was learned or meaningfully
 deepened, it gets captured here. This feeds an Obsidian vault separately
 maintained outside the project. Index is at `local-notes/learnings/_index.md`.
 
+**Learnings must be project-agnostic.** No project names, no project-specific
+tool names, no "in this project" framing. Examples should be generic enough
+to apply to any codebase. A learnings file should read as useful to someone
+who has never heard of this project. If an example is needed to illustrate a
+concept, use a plain generic example — not one tied to ILOSTAT, MCP, or any
+specific implementation detail of this project.
+
 `local-notes/` (covering `plan/`, `execution/`, and `learnings/`) and `CLAUDE.md`
 are committed to the **private repo only**. They are excluded from the public
 repo via the `publish` branch's `.gitignore`. See "Repo setup" below.
