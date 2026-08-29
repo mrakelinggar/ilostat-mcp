@@ -13,3 +13,4 @@ made here. Feed this into your Obsidian vault after each session or when the pro
 - [software-eng-breadth.md](software-eng-breadth.md) — Software engineering is more than programming. The full map of what the job actually involves.
 - [cicd-github-actions.md](cicd-github-actions.md) — What CI/CD is, why CI must be set up early, how GitHub Actions works (workflow YAML, triggers, jobs, steps), PyPI Trusted Publishing for CD, Azure Pipelines vs GitHub Actions.
 - [WRITING_MATERIALS.md](WRITING_MATERIALS.md) — Article ideas worth writing: practitioner-level, grounded in real decisions from real implementations. Updated each session. Not intro/tutorial material.
+- [TDS_GUIDELINES.md](TDS_GUIDELINES.md) — Towards Data Science submission guidelines (sourced August 2026). What passes, what gets rejected, the three filters to apply to every article idea before writing.

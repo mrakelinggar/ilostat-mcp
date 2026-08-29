@@ -5,6 +5,11 @@ finding from an actual implementation, not synthesised opinion. Target audience
 is practitioners: senior engineers and data scientists who will recognise the
 problem immediately and care about the decision behind the solution.
 
+Before adding an idea, run it through the three TDS filters (see [[TDS_GUIDELINES]]):
+1. **Underserved?** — what does this say that doesn't already exist?
+2. **Provable?** — can you show it working with code, numbers, or a live demo?
+3. **Specific?** — "How I built X" beats "An introduction to X" every time.
+
 Updated as ideas surface each session. Ideas marked ✅ are drafted/published.
 
 ---
