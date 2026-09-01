@@ -6,8 +6,27 @@
 - **Phase 3: Break detection** — `breaks.py`, `_breaks` field on `get_time_series`,
   SOURCE attribute diff logic, `OBS_PRE_BREAK_VALUE` check.
   See `plan/phase03/` (to be created).
-- Manual `fastmcp dev` verification of all tools/resources is optional before Phase 3;
-  31/31 automated tests cover the surface — skip manual pass if time-constrained.
+
+---
+
+## 2026-09-01 — FastMCP inspector + bug fixes
+
+Ran `fastmcp dev inspector src/ilostat_mcp/server.py` to manually verify all tools and resources. Found and fixed two input validation bugs.
+
+**Bug 1 — invalid country code returns misleading "server down" error:**
+ILOSTAT returns HTTP 500 (not 404/400) for unrecognized country codes. The error handler treated all 500s as server errors, so "XYZ" → "ILOSTAT API returned a server error and may be temporarily down." Fixed by validating the country code against the cached CL_AREA list at the `server.py` tool boundary before any API call. Invalid code → clear `ValueError`.
+
+**Bug 2 — non-numeric year format bypasses range check:**
+The `start_year > end_year` check uses string comparison. A malformed `end_year` like `"abcd"` is lexicographically greater than `"2020"`, so it passes the check and hits the API — returning HTTP 422 with a cryptic error. Fixed by validating both years are 4-digit numeric strings before the range check.
+
+**Key finding:** ILOSTAT returns non-standard HTTP status codes for bad query parameters (500 for bad country, 422 for bad date format). Input validation at the tool boundary is the only reliable way to catch these — the client can't distinguish "bad input" from "real server error" from the status code alone.
+
+**Checklist:**
+- [x] Country code validation in `server.py`
+- [x] Year format validation in `server.py`
+- [x] Tests for both: `test_invalid_country_code_raises`, `test_non_numeric_year_raises`
+- [x] 32/32 tests passing, ruff + mypy clean
+- [x] Pushed to origin
 
 ---
 
