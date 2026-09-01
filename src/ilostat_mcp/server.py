@@ -5,7 +5,7 @@ All business logic lives in sdmx_client.py and resources.py.
 This file registers tools and wires entry points.
 """
 
-import json
+from typing import cast
 
 from fastmcp import FastMCP
 
@@ -73,13 +73,14 @@ _AGE_GROUP_MAP = {
 
 @mcp.tool(
     description=(
-        "Fetch a time series from ILOSTAT. Returns a JSON string with two keys: "
-        "'data' (list of annual observations: time_period, value, obs_status, "
-        "source, unit_measure) and '_breaks' (list of methodology breaks — each "
-        "has year, source_before, source_after; empty list if none). "
+        "Fetch a time series from ILOSTAT. Returns a list where the FIRST element "
+        "is series metadata: {_breaks: [...]} listing methodology breaks detected "
+        "(each break: {year, source_before, source_after}; empty list if none). "
+        "Remaining elements are annual observations with columns: time_period, "
+        "value, obs_status, source, unit_measure. "
         "Do not compute multi-year trends across a break without flagging it. "
         "age_group: 'total' (default, adults 15+) or 'youth' (15-29); ignored "
-        "for wage flows. 'data' is empty if the country has no data for this flow."
+        "for wage flows. Returns [{_breaks: []}] if country has no data."
     )
 )
 def get_time_series(
@@ -88,7 +89,7 @@ def get_time_series(
     start_year: str,
     end_year: str,
     age_group: str = "total",
-) -> str:
+) -> list[dict[str, object]]:
     if age_group not in _AGE_GROUP_MAP:
         raise ValueError(f"age_group must be 'total' or 'youth' (got {age_group!r})")
     for label, year in (("start_year", start_year), ("end_year", end_year)):
@@ -112,12 +113,11 @@ def get_time_series(
     df = sdmx_client.get_time_series(
         dataflow_id, country, start_year, end_year, age=age, cur=cur, geo=geo
     )
+    detected_breaks: list[dict[str, object]] = breaks.detect_breaks(df)
     if df.empty:
-        return json.dumps({"data": [], "_breaks": []})
-    # df.to_json handles numpy/pandas types; round-trip via loads gives plain Python
-    data = json.loads(df.to_json(orient="records"))
-    detected_breaks = breaks.detect_breaks(df)
-    return json.dumps({"data": data, "_breaks": detected_breaks})
+        return [{"_breaks": detected_breaks}]
+    rows = cast(list[dict[str, object]], df.to_dict(orient="records"))
+    return [{"_breaks": detected_breaks}, *rows]
 
 
 def main() -> None:

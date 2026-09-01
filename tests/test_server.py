@@ -4,12 +4,12 @@ type and shape. All tests hit the real ILOSTAT API; the session-scoped
 prewarm_dsd_cache fixture (conftest.py) runs automatically and pre-warms the
 DSD cache so per-test timeouts are not burned on Cloudflare challenge-solving.
 
-get_time_series returns a JSON string {"data": [...], "_breaks": [...]} since
-Phase 3. FastMCP wraps strings as TextContent; returning dict triggers protocol
-validation that requires a 'result' key (FastMCP 3.x ToolResult contract).
+get_time_series returns list[dict] since Phase 3, where:
+  result[0] = {"_breaks": [...]}  — series-level metadata
+  result[1:] = annual data rows
+MCP 1.29.1 requires structured_content.result to be an array, so only list
+return types work with FastMCP 3.x.
 """
-
-import json
 
 import pytest
 
@@ -70,37 +70,35 @@ class TestGetIndicatorMetadata:
 class TestGetTimeSeries:
     @pytest.mark.timeout(30)
     def test_deu_unemployment_returns_data(self):
-        result = json.loads(get_time_series(_UNEMPLOYMENT_FLOW, "DEU", "2018", "2023"))
-        assert isinstance(result["data"], list)
-        assert len(result["data"]) > 0
-        assert all(_REQUIRED_TS_KEYS <= set(row) for row in result["data"])
+        result = get_time_series(_UNEMPLOYMENT_FLOW, "DEU", "2018", "2023")
+        assert isinstance(result, list)
+        assert "_breaks" in result[0]  # first element is metadata
+        data_rows = result[1:]
+        assert len(data_rows) > 0
+        assert all(_REQUIRED_TS_KEYS <= set(row) for row in data_rows)
 
     @pytest.mark.timeout(30)
-    def test_prk_returns_empty_data_and_breaks(self):
+    def test_prk_returns_only_metadata_with_empty_breaks(self):
         # PRK (North Korea) confirmed 404 in Phase 0
-        result = json.loads(get_time_series(_UNEMPLOYMENT_FLOW, "PRK", "2010", "2023"))
-        assert result == {"data": [], "_breaks": []}
+        result = get_time_series(_UNEMPLOYMENT_FLOW, "PRK", "2010", "2023")
+        assert result == [{"_breaks": []}]
 
     @pytest.mark.timeout(30)
     def test_wage_flow_auto_selects_cur_and_has_unit_measure(self):
         # FLOW_DIMS maps wage flow to "cur" — server must inject CUR_DEFAULT
-        result = json.loads(get_time_series(_WAGE_FLOW, "FRA", "2020", "2023"))
-        assert isinstance(result["data"], list)
-        assert len(result["data"]) > 0
-        assert all("unit_measure" in row for row in result["data"])
+        result = get_time_series(_WAGE_FLOW, "FRA", "2020", "2023")
+        data_rows = result[1:]
+        assert len(data_rows) > 0
+        assert all("unit_measure" in row for row in data_rows)
 
     @pytest.mark.timeout(30)
     def test_youth_age_group_returns_different_values_than_total(self):
         # ZAF youth unemployment (GEO flow) — adult total AGE code absent, youth present
-        total = json.loads(
-            get_time_series(_GEO_FLOW, "ZAF", "2022", "2022", age_group="total")
-        )
-        youth = json.loads(
-            get_time_series(_GEO_FLOW, "ZAF", "2022", "2022", age_group="youth")
-        )
-        assert len(youth["data"]) == 1, "Youth should return 1 row (GEO_COV_NAT)"
-        assert len(total["data"]) == 0, "Adult total AGE not available in GEO flow"
-        assert youth["data"][0]["value"] > 40, "ZAF youth unemployment >40%"
+        total = get_time_series(_GEO_FLOW, "ZAF", "2022", "2022", age_group="total")
+        youth = get_time_series(_GEO_FLOW, "ZAF", "2022", "2022", age_group="youth")
+        assert len(youth[1:]) == 1, "Youth should return 1 data row (GEO_COV_NAT)"
+        assert len(total[1:]) == 0, "Adult total AGE not available in GEO flow"
+        assert youth[1]["value"] > 40, "ZAF youth unemployment >40%"
 
     def test_invalid_age_group_raises(self):
         with pytest.raises(ValueError, match="age_group"):
