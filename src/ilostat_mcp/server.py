@@ -9,7 +9,7 @@ from typing import cast
 
 from fastmcp import FastMCP
 
-from ilostat_mcp import resources, sdmx_client
+from ilostat_mcp import breaks, resources, sdmx_client
 from ilostat_mcp.indicators import AGE_TOTAL, AGE_YOUTH, CUR_DEFAULT, FLOW_DIMS
 
 mcp = FastMCP("ilostat-mcp")
@@ -73,11 +73,14 @@ _AGE_GROUP_MAP = {
 
 @mcp.tool(
     description=(
-        "Fetch a time series from ILOSTAT. Returns a list of annual observations "
-        "with columns: time_period, value, obs_status, source, unit_measure. "
-        "obs_status 'B' = methodology break — do not compute trends across breaks. "
-        "age_group: 'total' (default, adults 15+) or 'youth' (15-29); ignored for "
-        "wage flows. Returns [] if the country has no data for this flow."
+        "Fetch a time series from ILOSTAT. Returns {data, _breaks}. "
+        "'data' is a list of annual observations with columns: time_period, "
+        "value, obs_status, source, unit_measure. "
+        "'_breaks' is a list of methodology breaks detected in the series — "
+        "each break has year, source_before, source_after. Empty list if none. "
+        "Do not compute multi-year trends across a break without flagging it. "
+        "age_group: 'total' (default, adults 15+) or 'youth' (15-29); ignored "
+        "for wage flows. 'data' is empty if the country has no data for this flow."
     )
 )
 def get_time_series(
@@ -86,7 +89,7 @@ def get_time_series(
     start_year: str,
     end_year: str,
     age_group: str = "total",
-) -> list[dict[str, object]]:
+) -> dict[str, object]:
     if age_group not in _AGE_GROUP_MAP:
         raise ValueError(f"age_group must be 'total' or 'youth' (got {age_group!r})")
     for label, year in (("start_year", start_year), ("end_year", end_year)):
@@ -111,8 +114,11 @@ def get_time_series(
         dataflow_id, country, start_year, end_year, age=age, cur=cur, geo=geo
     )
     if df.empty:
-        return []
-    return cast(list[dict[str, object]], df.to_dict(orient="records"))
+        return {"data": [], "_breaks": []}
+    return {
+        "data": cast(list[dict[str, object]], df.to_dict(orient="records")),
+        "_breaks": breaks.detect_breaks(df),
+    }
 
 
 def main() -> None:
