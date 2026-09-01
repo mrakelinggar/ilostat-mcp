@@ -89,6 +89,9 @@ def get_time_series(
 ) -> list[dict[str, object]]:
     if age_group not in _AGE_GROUP_MAP:
         raise ValueError(f"age_group must be 'total' or 'youth' (got {age_group!r})")
+    for label, year in (("start_year", start_year), ("end_year", end_year)):
+        if not (year.isdigit() and len(year) == 4):
+            raise ValueError(f"{label} must be a 4-digit year (got {year!r})")
     if start_year > end_year:
         raise ValueError(
             f"start_year must be <= end_year (got {start_year} to {end_year})"

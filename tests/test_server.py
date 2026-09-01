@@ -105,3 +105,7 @@ class TestGetTimeSeries:
     def test_invalid_country_code_raises(self):
         with pytest.raises(ValueError, match="country code"):
             get_time_series(_UNEMPLOYMENT_FLOW, "XYZ", "2020", "2022")
+
+    def test_non_numeric_year_raises(self):
+        with pytest.raises(ValueError, match="end_year"):
+            get_time_series(_UNEMPLOYMENT_FLOW, "DEU", "2020", "abcd")
