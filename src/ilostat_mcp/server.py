@@ -93,6 +93,12 @@ def get_time_series(
         raise ValueError(
             f"start_year must be <= end_year (got {start_year} to {end_year})"
         )
+    valid_codes = {c["code"] for c in resources.get_cached_countries()}
+    if country not in valid_codes:
+        raise ValueError(
+            f"Unknown country code {country!r}."
+            " Use get_countries() to find valid codes."
+        )
     flow_info = FLOW_DIMS.get(dataflow_id, {})
     dim = flow_info.get("dim")
     age = _AGE_GROUP_MAP[age_group] if dim == "age" else None
