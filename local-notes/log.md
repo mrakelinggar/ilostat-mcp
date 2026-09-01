@@ -4,6 +4,7 @@
 
 ## TODO — start of next session
 - **Build Phase 2b** — see `plan/phase02/phase_2b_plan.md` for full task list.
+- Phase 1.5 is complete. CI is green, live API tests pass from GH Actions IPs.
 - **Verify Phase 2 + 2b together** in a single test pass after Phase 2b is built.
   Phase 2b doesn't change Phase 2 tool behaviour, so one pass covers both.
   Checklist:
@@ -12,6 +13,44 @@
   - `get_time_series` with `age_group="youth"` returns correct youth band for ZAF
   - PAK wages (`DF_EAR_CMTA_SEX_CUR_NB`) and DEU emp-to-pop (`DF_EMP_2WAP_SEX_AGE_RT`) return data
   Phase 3 should not start until this passes.
+
+---
+
+## 2026-09-01 — Phase 1.5: CI/CD
+
+GitHub Actions CI wired and green on first push.
+
+**Pre-task discovery result:** Live ILOSTAT API tests pass from GitHub Actions IPs —
+Cloudflare does not block shared cloud runners. No need to mark tests or skip in CI.
+
+**What was done:**
+- `.github/workflows/ci.yml` — two jobs: `quality` (ruff + mypy, 29s) then `tests`
+  (pytest vs live ILOSTAT API, 51s). Tests only run if quality passes.
+- `.github/workflows/publish.yml` — stub for Phase 6 PyPI publish via Trusted Publishing.
+- Added `ruff`, `mypy`, `pandas-stubs` to dev dependencies.
+- Configured `[tool.ruff]` and `[tool.mypy]` in `pyproject.toml`:
+  - ruff excludes `local-notes/` and `.claude/`, selects E/W/F/I/UP/B/C4/SIM/PERF/RUF
+  - mypy strict + Python 3.12 + overrides for cloudscraper/sdmx (no stubs)
+- Fixed all ruff violations in `src/` and `tests/`: import order, unused imports,
+  `Optional[str]` → `str | None`, `dict()` → literals, narrowed `except Exception`
+  in `get_countries()` to `(HTTPError, RequestsConnectionError, Timeout)`
+- Fixed all mypy errors: `dict` → `dict[str, object]`/`dict[str, str]` throughout,
+  `cast(pd.DataFrame, sdmx.to_pandas(...))` to handle untyped sdmx library
+
+**Key finding for log:** mypy `python_version` must match the runtime Python (3.12),
+not just `requires-python` (>=3.11), because numpy/pandas stubs use Python 3.12
+`type` statement syntax that mypy rejects at 3.11 mode.
+
+**Checklist:**
+- [x] `ci.yml` created and green on first run
+- [x] `publish.yml` stub created
+- [x] `ruff check src/ tests/` passes clean
+- [x] `ruff format --check src/ tests/` passes clean
+- [x] `mypy src/` passes clean
+- [x] Live API tests confirmed passing from GitHub Actions IPs
+- [x] Log updated
+
+**Next:** Phase 2b — see `plan/phase02/phase_2b_plan.md`.
 
 ---
 

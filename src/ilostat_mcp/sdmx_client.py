@@ -4,15 +4,17 @@ ILOSTAT SDMX client — the only file in the codebase that imports sdmx1.
 All other modules receive plain pandas DataFrames or plain dicts from here;
 sdmx1 specifics never leak past this boundary.
 
-Design decisions (all resolved in Phase 0):
+Design decisions (all resolved in Phase 0 + Phase 2b):
 - cloudscraper session replaces the default requests session to bypass Cloudflare
 - sdmx.to_pandas(resp, attributes="o") surfaces observation-level attributes
   (SOURCE, OBS_STATUS, etc.) that the default call drops
 - FREQ is filtered post-fetch in pandas, not in the SDMX key dict
-- AGE/CUR dimension included in key dict only when the caller passes a value
-- HTTPError on 404 → return empty DataFrame (both "no data" and "invalid flow ID")
+- AGE/CUR/GEO dimension included in key dict only when the caller passes a value
+- HTTPError on 404/400 → return empty DataFrame/dict (no data or invalid flow ID)
 - last_updated comes from the LAST_UPDATE annotation in client.dataflow()
 - MEASURE column dropped from output (always single-valued per flow)
+- 30-second timeout via _client._send_kwargs — sdmx1 passes this to session.send()
+- ConnectionError/Timeout/429/500/503 → RuntimeError with plain-English message
 """
 
 import logging
@@ -33,10 +35,15 @@ logger = logging.getLogger(__name__)
 # ── Client setup ─────────────────────────────────────────────────────────────
 
 
+_TIMEOUT_SECONDS = 30  # applied to every ILOSTAT API request
+
 _scraper = cloudscraper.create_scraper()
 
 _client = sdmx.Client("ILO")
 _client.session = _scraper
+# _send_kwargs is passed verbatim to session.send() on every request.
+# Setting timeout here makes it apply globally without repeating it per call.
+_client._send_kwargs["timeout"] = _TIMEOUT_SECONDS
 
 # Columns to keep in get_time_series output (snake_case after lowering).
 # MEASURE is always single-valued per flow — dropped as uninformative.
@@ -50,11 +57,31 @@ _KEEP_COLUMNS = {
     "unit_measure",
     "freq",
     "sex",
-    # age and cur are added conditionally below
     "age",
     "cur",
+    "geo",
     "note_classif",
 }
+
+
+# ── Error helpers ────────────────────────────────────────────────────────────
+
+
+def _plain_english_error(exc: HTTPError) -> RuntimeError:
+    """Convert a non-404 HTTPError to a RuntimeError with a user-facing message.
+
+    Callers handle 404/400 themselves (empty result contract). This converts
+    everything else to a message Claude can relay to the user.
+    """
+    status = exc.response.status_code if exc.response is not None else None
+    if status == 429:
+        return RuntimeError("ILOSTAT rate limit reached — wait a moment and try again.")
+    if status in (500, 503):
+        return RuntimeError(
+            "ILOSTAT API returned a server error and may be temporarily down."
+            " Try again shortly."
+        )
+    return RuntimeError(f"ILOSTAT API error (HTTP {status}).")
 
 
 # ── Public functions ──────────────────────────────────────────────────────────
@@ -70,6 +97,7 @@ def get_time_series(
     sex: str = "SEX_T",
     age: str | None = None,
     cur: str | None = None,
+    geo: str | None = None,
 ) -> pd.DataFrame:
     """
     Fetch a time series from ILOSTAT and return a clean DataFrame.
@@ -84,11 +112,13 @@ def get_time_series(
     sex     : SEX dimension value (default "SEX_T" = total)
     age     : AGE dimension value; include only if the flow uses AGE
     cur     : CUR dimension value; include only if the flow uses CUR
+    geo     : GEO dimension value; include only for flows with a GEO dimension
+              (e.g. "GEO_COV_NAT" = national total)
 
     Returns
     -------
     DataFrame with columns: time_period, value, obs_status, source,
-    unit_measure, freq, sex, [age or cur if present], note_classif.
+    unit_measure, freq, sex, [age|cur|geo if present], note_classif.
     Empty DataFrame if the country has no data (404).
     """
     key: dict[str, str] = {"REF_AREA": country, "SEX": sex}
@@ -96,6 +126,8 @@ def get_time_series(
         key["AGE"] = age
     if cur is not None:
         key["CUR"] = cur
+    if geo is not None:
+        key["GEO"] = geo
 
     try:
         resp = _client.data(
@@ -103,11 +135,20 @@ def get_time_series(
             key=key,
             params={"startPeriod": start, "endPeriod": end},
         )
+    except Timeout as exc:
+        raise RuntimeError(
+            "ILOSTAT API request timed out — the server may be slow or unavailable."
+            " Try again."
+        ) from exc
+    except RequestsConnectionError as exc:
+        raise RuntimeError(
+            "Could not reach ILOSTAT's API — check your internet connection."
+        ) from exc
     except HTTPError as exc:
         if exc.response is not None and exc.response.status_code in (404, 400):
             logger.debug("No data for %s/%s: %s", flow_id, country, exc)
             return pd.DataFrame()
-        raise
+        raise _plain_english_error(exc) from exc
 
     df = cast(pd.DataFrame, sdmx.to_pandas(resp, attributes="o")).reset_index()  # type: ignore[no-untyped-call]
 
@@ -144,11 +185,20 @@ def get_indicator_metadata(flow_id: str) -> dict[str, object]:
     """
     try:
         resp = _client.dataflow(flow_id)
+    except Timeout as exc:
+        raise RuntimeError(
+            "ILOSTAT API request timed out — the server may be slow or unavailable."
+            " Try again."
+        ) from exc
+    except RequestsConnectionError as exc:
+        raise RuntimeError(
+            "Could not reach ILOSTAT's API — check your internet connection."
+        ) from exc
     except HTTPError as exc:
         if exc.response is not None and exc.response.status_code in (404, 400):
             logger.debug("Unknown flow ID %s: %s", flow_id, exc)
             return {}
-        raise
+        raise _plain_english_error(exc) from exc
 
     flows = resp.dataflow
     if flow_id not in flows:
@@ -193,9 +243,17 @@ def search_indicators(
 
     try:
         resp = _client.dataflow()
+    except Timeout as exc:
+        raise RuntimeError(
+            "ILOSTAT API request timed out — the server may be slow or unavailable."
+            " Try again."
+        ) from exc
+    except RequestsConnectionError as exc:
+        raise RuntimeError(
+            "Could not reach ILOSTAT's API — check your internet connection."
+        ) from exc
     except HTTPError as exc:
-        logger.warning("Failed to fetch dataflow catalog: %s", exc)
-        return []
+        raise _plain_english_error(exc) from exc
 
     for flow_id, flow in resp.dataflow.items():
         title = str(flow.name) if flow.name else ""
@@ -232,14 +290,23 @@ def get_countries() -> list[dict[str, str]]:
 
     Each entry has keys: code, name.
 
-    Falls back to an empty list if the codelist endpoint fails — callers
-    should treat an empty list as "try the data endpoint directly".
+    Raises RuntimeError on any API failure — an empty list is never a valid
+    result (ILOSTAT always has countries), so callers cannot treat [] as
+    "no countries".
     """
     try:
         resp = _client.codelist("CL_AREA")
-    except (HTTPError, RequestsConnectionError, Timeout) as exc:
-        logger.warning("Failed to fetch CL_AREA codelist: %s", exc)
-        return []
+    except Timeout as exc:
+        raise RuntimeError(
+            "ILOSTAT API request timed out — the server may be slow or unavailable."
+            " Try again."
+        ) from exc
+    except RequestsConnectionError as exc:
+        raise RuntimeError(
+            "Could not reach ILOSTAT's API — check your internet connection."
+        ) from exc
+    except HTTPError as exc:
+        raise _plain_english_error(exc) from exc
 
     areas: list[dict[str, str]] = []
     for codelist in resp.codelist.values():

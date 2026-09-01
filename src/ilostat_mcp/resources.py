@@ -6,6 +6,33 @@ call — it populates once per process and stays for the session.
 """
 
 from ilostat_mcp import sdmx_client
+from ilostat_mcp.indicators import FLOWS
+
+# The four canonical flows for v1, exposed as a resource so the agent knows
+# which dataflow IDs to use for common themes without having to call search_indicators.
+# Titles are the official ILOSTAT names (verified against live API, Phase 0).
+CANONICAL_FLOWS: list[dict[str, str]] = [
+    {
+        "theme": "unemployment_rate",
+        "dataflow_id": FLOWS["unemployment_rate"],
+        "title": "Unemployment rate by sex and age",
+    },
+    {
+        "theme": "employment_to_pop",
+        "dataflow_id": FLOWS["employment_to_pop"],
+        "title": "Employment-to-population ratio by sex and age",
+    },
+    {
+        "theme": "wages",
+        "dataflow_id": FLOWS["wages"],
+        "title": "Average monthly earnings of employees by sex and currency",
+    },
+    {
+        "theme": "lfpr",
+        "dataflow_id": FLOWS["lfpr"],
+        "title": "Labour force participation rate by sex and age",
+    },
+]
 
 _countries_cache: list[dict[str, str]] | None = None
 

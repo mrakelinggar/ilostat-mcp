@@ -10,7 +10,7 @@ from typing import cast
 from fastmcp import FastMCP
 
 from ilostat_mcp import resources, sdmx_client
-from ilostat_mcp.indicators import AGE_TOTAL, CUR_DEFAULT, FLOW_DIMS
+from ilostat_mcp.indicators import AGE_TOTAL, AGE_YOUTH, CUR_DEFAULT, FLOW_DIMS
 
 mcp = FastMCP("ilostat-mcp")
 
@@ -18,6 +18,18 @@ mcp = FastMCP("ilostat-mcp")
 @mcp.resource("ilostat://system-prompt")
 def system_prompt() -> str:
     return resources.SYSTEM_PROMPT
+
+
+@mcp.resource("ilostat://codelists/area")
+def codelist_area() -> list[dict[str, str]]:
+    """All valid ILOSTAT country/area codes from CL_AREA."""
+    return resources.get_cached_countries()
+
+
+@mcp.resource("ilostat://codelists/indicator")
+def codelist_indicator() -> list[dict[str, str]]:
+    """The four canonical v1 dataflows — theme, dataflow_id, title."""
+    return resources.CANONICAL_FLOWS
 
 
 @mcp.tool(
@@ -53,12 +65,19 @@ def get_indicator_metadata(dataflow_id: str) -> dict[str, object]:
     return sdmx_client.get_indicator_metadata(dataflow_id)
 
 
+_AGE_GROUP_MAP = {
+    "total": AGE_TOTAL,  # adults 15+
+    "youth": AGE_YOUTH,  # youth 15-29
+}
+
+
 @mcp.tool(
     description=(
         "Fetch a time series from ILOSTAT. Returns a list of annual observations "
         "with columns: time_period, value, obs_status, source, unit_measure. "
         "obs_status 'B' = methodology break — do not compute trends across breaks. "
-        "Returns [] if the country has no data for this flow."
+        "age_group: 'total' (default, adults 15+) or 'youth' (15-29); ignored for "
+        "wage flows. Returns [] if the country has no data for this flow."
     )
 )
 def get_time_series(
@@ -66,12 +85,21 @@ def get_time_series(
     country: str,
     start_year: str,
     end_year: str,
+    age_group: str = "total",
 ) -> list[dict[str, object]]:
-    dim = FLOW_DIMS.get(dataflow_id)
-    age = AGE_TOTAL if dim == "age" else None
+    if age_group not in _AGE_GROUP_MAP:
+        raise ValueError(f"age_group must be 'total' or 'youth' (got {age_group!r})")
+    if start_year > end_year:
+        raise ValueError(
+            f"start_year must be <= end_year (got {start_year} to {end_year})"
+        )
+    flow_info = FLOW_DIMS.get(dataflow_id, {})
+    dim = flow_info.get("dim")
+    age = _AGE_GROUP_MAP[age_group] if dim == "age" else None
     cur = CUR_DEFAULT if dim == "cur" else None
+    geo = flow_info.get("GEO")
     df = sdmx_client.get_time_series(
-        dataflow_id, country, start_year, end_year, age=age, cur=cur
+        dataflow_id, country, start_year, end_year, age=age, cur=cur, geo=geo
     )
     if df.empty:
         return []

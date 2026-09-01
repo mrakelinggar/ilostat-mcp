@@ -16,6 +16,7 @@ from ilostat_mcp.server import (
 
 _UNEMPLOYMENT_FLOW = "DF_UNE_DEAP_SEX_AGE_RT"
 _WAGE_FLOW = "DF_EAR_EMTA_SEX_CUR_NB"
+_GEO_FLOW = "DF_UNE_3EAP_SEX_AGE_GEO_RT"  # youth unemployment with GEO dimension
 _REQUIRED_SEARCH_KEYS = {"id", "title", "is_modelled"}
 _REQUIRED_METADATA_KEYS = {"id", "title", "description", "last_updated", "is_modelled"}
 _REQUIRED_TS_KEYS = {"time_period", "value", "obs_status"}
@@ -37,16 +38,15 @@ class TestSearchIndicators:
 
 class TestGetCountries:
     @pytest.mark.timeout(30)
-    def test_returns_list(self):
-        # graceful fallback — may return [] if codelist endpoint is down
+    def test_returns_non_empty_list(self):
         result = get_countries()
         assert isinstance(result, list)
+        assert len(result) > 0, "get_countries() must never return an empty list"
 
     @pytest.mark.timeout(30)
-    def test_each_entry_has_code_and_name_if_non_empty(self):
+    def test_each_entry_has_code_and_name(self):
         result = get_countries()
-        if result:
-            assert all({"code", "name"} <= set(entry) for entry in result)
+        assert all({"code", "name"} <= set(entry) for entry in result)
 
 
 class TestGetIndicatorMetadata:
@@ -82,3 +82,22 @@ class TestGetTimeSeries:
         assert isinstance(result, list)
         assert len(result) > 0
         assert all("unit_measure" in row for row in result)
+
+    @pytest.mark.timeout(30)
+    def test_youth_age_group_returns_different_values_than_total(self):
+        # ZAF youth unemployment (GEO flow) — adult total AGE code absent, youth present
+        total = get_time_series(_GEO_FLOW, "ZAF", "2022", "2022", age_group="total")
+        youth = get_time_series(_GEO_FLOW, "ZAF", "2022", "2022", age_group="youth")
+        assert len(youth) == 1, "Youth query should return exactly 1 row (GEO_COV_NAT)"
+        assert len(total) == 0, "Adult total AGE code not available in this GEO flow"
+        assert youth[0]["value"] > 40, "ZAF youth unemployment should be >40%"
+
+    def test_invalid_age_group_raises(self):
+        with pytest.raises(ValueError, match="age_group"):
+            get_time_series(
+                _UNEMPLOYMENT_FLOW, "DEU", "2020", "2022", age_group="adult"
+            )
+
+    def test_start_year_after_end_year_raises(self):
+        with pytest.raises(ValueError, match="start_year"):
+            get_time_series(_UNEMPLOYMENT_FLOW, "DEU", "2022", "2018")
