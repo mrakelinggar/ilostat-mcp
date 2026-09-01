@@ -5,7 +5,7 @@ All business logic lives in sdmx_client.py and resources.py.
 This file registers tools and wires entry points.
 """
 
-from typing import cast
+import json
 
 from fastmcp import FastMCP
 
@@ -73,11 +73,10 @@ _AGE_GROUP_MAP = {
 
 @mcp.tool(
     description=(
-        "Fetch a time series from ILOSTAT. Returns {data, _breaks}. "
-        "'data' is a list of annual observations with columns: time_period, "
-        "value, obs_status, source, unit_measure. "
-        "'_breaks' is a list of methodology breaks detected in the series — "
-        "each break has year, source_before, source_after. Empty list if none. "
+        "Fetch a time series from ILOSTAT. Returns a JSON string with two keys: "
+        "'data' (list of annual observations: time_period, value, obs_status, "
+        "source, unit_measure) and '_breaks' (list of methodology breaks — each "
+        "has year, source_before, source_after; empty list if none). "
         "Do not compute multi-year trends across a break without flagging it. "
         "age_group: 'total' (default, adults 15+) or 'youth' (15-29); ignored "
         "for wage flows. 'data' is empty if the country has no data for this flow."
@@ -89,7 +88,7 @@ def get_time_series(
     start_year: str,
     end_year: str,
     age_group: str = "total",
-) -> dict[str, object]:
+) -> str:
     if age_group not in _AGE_GROUP_MAP:
         raise ValueError(f"age_group must be 'total' or 'youth' (got {age_group!r})")
     for label, year in (("start_year", start_year), ("end_year", end_year)):
@@ -114,11 +113,11 @@ def get_time_series(
         dataflow_id, country, start_year, end_year, age=age, cur=cur, geo=geo
     )
     if df.empty:
-        return {"data": [], "_breaks": []}
-    return {
-        "data": cast(list[dict[str, object]], df.to_dict(orient="records")),
-        "_breaks": breaks.detect_breaks(df),
-    }
+        return json.dumps({"data": [], "_breaks": []})
+    # df.to_json handles numpy/pandas types; round-trip via loads gives plain Python
+    data = json.loads(df.to_json(orient="records"))
+    detected_breaks = breaks.detect_breaks(df)
+    return json.dumps({"data": data, "_breaks": detected_breaks})
 
 
 def main() -> None:

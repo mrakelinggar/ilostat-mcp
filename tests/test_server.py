@@ -4,8 +4,12 @@ type and shape. All tests hit the real ILOSTAT API; the session-scoped
 prewarm_dsd_cache fixture (conftest.py) runs automatically and pre-warms the
 DSD cache so per-test timeouts are not burned on Cloudflare challenge-solving.
 
-get_time_series returns {"data": [...], "_breaks": [...]} since Phase 3.
+get_time_series returns a JSON string {"data": [...], "_breaks": [...]} since
+Phase 3. FastMCP wraps strings as TextContent; returning dict triggers protocol
+validation that requires a 'result' key (FastMCP 3.x ToolResult contract).
 """
+
+import json
 
 import pytest
 
@@ -66,7 +70,7 @@ class TestGetIndicatorMetadata:
 class TestGetTimeSeries:
     @pytest.mark.timeout(30)
     def test_deu_unemployment_returns_data(self):
-        result = get_time_series(_UNEMPLOYMENT_FLOW, "DEU", "2018", "2023")
+        result = json.loads(get_time_series(_UNEMPLOYMENT_FLOW, "DEU", "2018", "2023"))
         assert isinstance(result["data"], list)
         assert len(result["data"]) > 0
         assert all(_REQUIRED_TS_KEYS <= set(row) for row in result["data"])
@@ -74,13 +78,13 @@ class TestGetTimeSeries:
     @pytest.mark.timeout(30)
     def test_prk_returns_empty_data_and_breaks(self):
         # PRK (North Korea) confirmed 404 in Phase 0
-        result = get_time_series(_UNEMPLOYMENT_FLOW, "PRK", "2010", "2023")
+        result = json.loads(get_time_series(_UNEMPLOYMENT_FLOW, "PRK", "2010", "2023"))
         assert result == {"data": [], "_breaks": []}
 
     @pytest.mark.timeout(30)
     def test_wage_flow_auto_selects_cur_and_has_unit_measure(self):
         # FLOW_DIMS maps wage flow to "cur" — server must inject CUR_DEFAULT
-        result = get_time_series(_WAGE_FLOW, "FRA", "2020", "2023")
+        result = json.loads(get_time_series(_WAGE_FLOW, "FRA", "2020", "2023"))
         assert isinstance(result["data"], list)
         assert len(result["data"]) > 0
         assert all("unit_measure" in row for row in result["data"])
@@ -88,11 +92,15 @@ class TestGetTimeSeries:
     @pytest.mark.timeout(30)
     def test_youth_age_group_returns_different_values_than_total(self):
         # ZAF youth unemployment (GEO flow) — adult total AGE code absent, youth present
-        total = get_time_series(_GEO_FLOW, "ZAF", "2022", "2022", age_group="total")
-        youth = get_time_series(_GEO_FLOW, "ZAF", "2022", "2022", age_group="youth")
+        total = json.loads(
+            get_time_series(_GEO_FLOW, "ZAF", "2022", "2022", age_group="total")
+        )
+        youth = json.loads(
+            get_time_series(_GEO_FLOW, "ZAF", "2022", "2022", age_group="youth")
+        )
         assert len(youth["data"]) == 1, "Youth should return 1 row (GEO_COV_NAT)"
         assert len(total["data"]) == 0, "Adult total AGE not available in GEO flow"
-        assert youth["data"][0]["value"] > 40, "ZAF youth unemployment should be >40%"
+        assert youth["data"][0]["value"] > 40, "ZAF youth unemployment >40%"
 
     def test_invalid_age_group_raises(self):
         with pytest.raises(ValueError, match="age_group"):

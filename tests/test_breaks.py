@@ -171,26 +171,32 @@ class TestGetTimeSeriesBreakField:
 
     @pytest.mark.timeout(30)
     def test_break_field_present_on_clean_series(self) -> None:
+        import json
+
         from ilostat_mcp.server import get_time_series as tool_get_time_series
 
-        result = tool_get_time_series(_UNE_FLOW, "DEU", "2018", "2023")
+        result = json.loads(tool_get_time_series(_UNE_FLOW, "DEU", "2018", "2023"))
         assert "data" in result
         assert "_breaks" in result
         assert result["_breaks"] == []
 
     @pytest.mark.timeout(30)
     def test_break_field_populated_for_break_country(self) -> None:
+        import json
+
         from ilostat_mcp.server import get_time_series as tool_get_time_series
 
         # THA wages: break at 2014 (HIES → LFS)
-        result = tool_get_time_series(_THA_WAGE_FLOW, "THA", "2010", "2020")
+        result = json.loads(tool_get_time_series(_THA_WAGE_FLOW, "THA", "2010", "2020"))
         assert "_breaks" in result
-        years = [b["year"] for b in result["_breaks"]]  # type: ignore[union-attr]
+        years = [b["year"] for b in result["_breaks"]]
         assert "2014" in years
 
     @pytest.mark.timeout(30)
     def test_no_data_returns_empty_data_and_breaks(self) -> None:
+        import json
+
         from ilostat_mcp.server import get_time_series as tool_get_time_series
 
-        result = tool_get_time_series(_UNE_FLOW, "PRK", "2010", "2023")
+        result = json.loads(tool_get_time_series(_UNE_FLOW, "PRK", "2010", "2023"))
         assert result == {"data": [], "_breaks": []}
