@@ -767,13 +767,13 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "beautifulsoup4", specifier = ">=4.12" },
-    { name = "cloudscraper", specifier = ">=1.2" },
-    { name = "fastmcp", specifier = ">=2.0" },
-    { name = "pandas", specifier = ">=2.0" },
+    { name = "beautifulsoup4", specifier = ">=4.12,<5.0" },
+    { name = "cloudscraper", specifier = ">=1.2,<2.0" },
+    { name = "fastmcp", specifier = ">=2.0,<4.0" },
+    { name = "pandas", specifier = ">=2.0,<4.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "pytest-timeout", marker = "extra == 'dev'", specifier = ">=2.3" },
-    { name = "sdmx1", specifier = ">=2.0" },
+    { name = "sdmx1", specifier = ">=2.0,<3.0" },
 ]
 provides-extras = ["dev"]
 

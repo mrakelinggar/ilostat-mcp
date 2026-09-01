@@ -55,3 +55,52 @@ _MODELLED_MARKERS = ("_ILO_MODELLED", "_MOD_", "2WAP")
 def is_modelled(flow_id: str) -> bool:
     """Return True if this flow is an ILO modelled estimate rather than survey data."""
     return any(marker in flow_id for marker in _MODELLED_MARKERS)
+
+
+# ISO 4217 currency codes for countries most likely to appear in benchmark queries.
+# Coverage prioritises countries confirmed to have ILOSTAT data (Phase 0 finding).
+# Not exhaustive — extend here when new benchmark countries are added.
+COUNTRY_CURRENCY: dict[str, str] = {
+    # G20 members
+    "ARG": "ARS",
+    "AUS": "AUD",
+    "BRA": "BRL",
+    "CAN": "CAD",
+    "CHN": "CNY",
+    "DEU": "EUR",
+    "FRA": "EUR",
+    "GBR": "GBP",
+    "IDN": "IDR",
+    "IND": "INR",
+    "ITA": "EUR",
+    "JPN": "JPY",
+    "KOR": "KRW",
+    "MEX": "MXN",
+    "RUS": "RUB",
+    "SAU": "SAR",
+    "TUR": "TRY",
+    "USA": "USD",
+    "ZAF": "ZAR",
+    # Other common benchmark countries
+    "BGD": "BDT",
+    "CHL": "CLP",
+    "COL": "COP",
+    "ECU": "USD",
+    "EGY": "EGP",
+    "ETH": "ETB",
+    "GHA": "GHS",
+    "KEN": "KES",
+    "MAR": "MAD",
+    "MYS": "MYR",
+    "NGA": "NGN",
+    "PAK": "PKR",
+    "PHL": "PHP",
+    "POL": "PLN",
+    "SWE": "SEK",
+    "THA": "THB",
+    "TZA": "TZS",
+    "UGA": "UGX",
+    "UKR": "UAH",
+    "VEN": "VES",
+    "VNM": "VND",
+}

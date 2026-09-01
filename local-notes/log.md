@@ -3,9 +3,44 @@
 ---
 
 ## TODO — start of next session
-- **Phase 4: Derived stats + remaining tools** — `analysis/growth.py` (yoy, cagr, trend),
-  wire `get_yoy_change`, `get_cagr`, `get_trend` tools, `labor_market_snapshot` prompt,
-  `COUNTRY_CURRENCY` map. See ROADMAP for full spec.
+- **Phase 4.5: Observability** — add `structlog` INFO-level logging to all 7 tools
+  (tool, inputs, outcome, duration_ms). OpenTelemetry spans for tool calls and API calls.
+  Honeycomb backend. Phase 5 benchmark follows.
+- **Phase 5: Hallucination benchmark** — `run_benchmark.py`, scoring, Kanza fills ground truth.
+
+---
+
+## 2026-09-01 — Phase 4: Derived stats + remaining tools
+
+All 7 tools now implemented. 116/116 tests passing.
+
+New in this phase:
+- `analysis/growth.py` — `yoy()`, `cagr()`, `trend()` pure functions (OLS implemented
+  without numpy; math spot-checked: DEU 2022 YoY -12.4576%, CAGR 2015–2022 -5.5215%)
+- `get_yoy_change`, `get_cagr`, `get_trend` tools — all return `list[dict]` (MCP 1.29.1
+  compliant). `result[0]` = `{_breaks, _break_warning}`, `result[1]` = stat dict.
+  `_break_warning` is `None` (not empty string) when no break; plain-English warning with
+  source-before/source-after when a break falls in the requested range.
+- `labor_market_snapshot` — `@mcp.prompt()` (not a tool). Validates country count,
+  resolves names and ISO-3 codes, raises clearly on unknown/ambiguous input.
+- `COUNTRY_CURRENCY` dict in `indicators.py` — ISO 4217 codes for 42 countries.
+- QA confirmed: break warning fires correctly on THA wages 2013–2020 (spans 2014 break).
+  PRK (no-data) returns `[{_breaks: [], _break_warning: None}]` for all three stat tools.
+
+Open gap: `structlog` INFO logging not yet added to new tools — deferred to Phase 4.5.
+Committed and pushed to `origin`.
+
+---
+
+## 2026-09-01 — QA fixes (post-Phase 3)
+
+Three deviations found by QA agent, all fixed:
+- Added upper bounds to all 5 deps in `pyproject.toml` (CLAUDE.md violation — was missing)
+- `html.unescape()` on country names in `sdmx_client.get_countries()` — ILOSTAT returns HTML
+  entities (e.g. `&#x27;`) in some country names like "Korea, Democratic People's Republic of"
+- ROADMAP Phase 3 outputs clarified: `get_cagr`/`get_trend` break-warning is Phase 4 work;
+  Phase 3 built the `detect_breaks()` + `break_years_in_range()` helpers
+All 53 tests still passing. Committed `c2e762f`, pushed to `origin`.
 
 ---
 
