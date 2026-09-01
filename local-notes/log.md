@@ -3,16 +3,54 @@
 ---
 
 ## TODO — start of next session
-- **Build Phase 2b** — see `plan/phase02/phase_2b_plan.md` for full task list.
-- Phase 1.5 is complete. CI is green, live API tests pass from GH Actions IPs.
-- **Verify Phase 2 + 2b together** in a single test pass after Phase 2b is built.
-  Phase 2b doesn't change Phase 2 tool behaviour, so one pass covers both.
-  Checklist:
-  - 4 original tools respond with real data; `[]` returned for PRK
-  - `ilostat://system-prompt`, `ilostat://codelists/area`, `ilostat://codelists/indicator` all load
-  - `get_time_series` with `age_group="youth"` returns correct youth band for ZAF
-  - PAK wages (`DF_EAR_CMTA_SEX_CUR_NB`) and DEU emp-to-pop (`DF_EMP_2WAP_SEX_AGE_RT`) return data
-  Phase 3 should not start until this passes.
+- **Phase 3: Break detection** — `breaks.py`, `_breaks` field on `get_time_series`,
+  SOURCE attribute diff logic, `OBS_PRE_BREAK_VALUE` check.
+  See `plan/phase03/` (to be created).
+- Manual `fastmcp dev` verification of all tools/resources is optional before Phase 3;
+  31/31 automated tests cover the surface — skip manual pass if time-constrained.
+
+---
+
+## 2026-09-01 — Phase 2b: server tools, resources, validation, error handling
+
+All 7 Phase 2b tasks complete. 31/31 tests passing. ruff + mypy clean.
+
+**What was done:**
+- **FLOW_DIMS restructured** (`indicators.py`): `dict[str, str]` → `dict[str, dict[str, str]]`
+  to carry both `dim` type and extra SDMX key values per flow. Required by GEO discovery.
+- **GEO dimension** (`sdmx_client.py`): `DF_UNE_3EAP_SEX_AGE_GEO_RT` needs `GEO=GEO_COV_NAT`
+  to filter to national total; omitting GEO returns national + rural + urban mixed.
+  Added `geo` param to `get_time_series`; `GEO_COV_NAT` stored in `FLOW_DIMS` entry.
+- **30s timeout** (`sdmx_client.py`): `_client._send_kwargs["timeout"] = 30` — this dict
+  is passed verbatim to `session.send()` on every request. Plain-English error helpers
+  for 429, 5xx, timeout, and connection failure — messages Claude can relay directly.
+- **`age_group` param** (`server.py`): `"total"` (adults 15+) or `"youth"` (15-29);
+  maps to `AGE_TOTAL`/`AGE_YOUTH` constants, ignored for wage flows. Year range
+  validation (start_year <= end_year) raises `ValueError` with actionable message.
+- **Resources** (`server.py` + `resources.py`): `ilostat://codelists/area` and
+  `ilostat://codelists/indicator` registered; `CANONICAL_FLOWS` with verified titles.
+- **Phase 2b indicator additions** (`indicators.py`): 4 benchmark flows added to `FLOW_DIMS`;
+  `AGE_YOUTH`, `_MODELLED_MARKERS` updated with `"2WAP"` marker.
+- **Tests** (`test_server.py`): 3 new cases — youth age_group vs total, invalid age_group
+  raises ValueError, start_year > end_year raises ValueError.
+
+**Key findings:**
+- sdmx1 timeout lives in `_client._send_kwargs["timeout"]` — passed verbatim to session.send().
+- `get_countries()` now raises on API failure instead of returning `[]` — an empty list
+  is never a valid result from ILOSTAT.
+- ZAF youth unemployment (GEO flow) returns no rows for `AGE_YTHADULT_YGE15` (adult total),
+  only for `AGE_YTHBANDS_Y15-29` (youth band) — confirmed in test.
+
+**Checklist:**
+- [x] FLOW_DIMS restructured, all callers updated
+- [x] geo param in sdmx_client, GEO_COV_NAT injected for GEO flow
+- [x] 30s timeout + plain-English error helpers
+- [x] age_group + year range validation in server.py
+- [x] codelists/area and codelists/indicator resources registered
+- [x] 4 benchmark flows added to indicators.py
+- [x] 3 new tests; 31/31 pass
+- [x] ruff + mypy clean
+- [x] Committed to main
 
 ---
 
@@ -50,7 +88,7 @@ not just `requires-python` (>=3.11), because numpy/pandas stubs use Python 3.12
 - [x] Live API tests confirmed passing from GitHub Actions IPs
 - [x] Log updated
 
-**Next:** Phase 2b — see `plan/phase02/phase_2b_plan.md`.
+**Next:** Phase 2b complete. Phase 3 (break detection) is next.
 
 ---
 
