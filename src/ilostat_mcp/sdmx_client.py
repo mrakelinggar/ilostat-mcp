@@ -16,14 +16,15 @@ Design decisions (all resolved in Phase 0):
 """
 
 import logging
-from typing import Optional
+from typing import cast
 
 import cloudscraper
 import pandas as pd
 import sdmx
 import sdmx.message
 from bs4 import BeautifulSoup
-from requests.exceptions import HTTPError
+from requests.exceptions import ConnectionError as RequestsConnectionError
+from requests.exceptions import HTTPError, Timeout
 
 from ilostat_mcp.indicators import is_modelled
 
@@ -42,15 +43,22 @@ _client.session = _scraper
 # unit_measure_type, unit_mult, note_source, note_indicator, decimals, bounds
 # are either metadata noise or empty for our canonical flows.
 _KEEP_COLUMNS = {
-    "time_period", "value", "obs_status", "source",
-    "unit_measure", "freq", "sex",
+    "time_period",
+    "value",
+    "obs_status",
+    "source",
+    "unit_measure",
+    "freq",
+    "sex",
     # age and cur are added conditionally below
-    "age", "cur",
+    "age",
+    "cur",
     "note_classif",
 }
 
 
 # ── Public functions ──────────────────────────────────────────────────────────
+
 
 def get_time_series(
     flow_id: str,
@@ -60,8 +68,8 @@ def get_time_series(
     *,
     freq: str = "A",
     sex: str = "SEX_T",
-    age: Optional[str] = None,
-    cur: Optional[str] = None,
+    age: str | None = None,
+    cur: str | None = None,
 ) -> pd.DataFrame:
     """
     Fetch a time series from ILOSTAT and return a clean DataFrame.
@@ -101,7 +109,7 @@ def get_time_series(
             return pd.DataFrame()
         raise
 
-    df = sdmx.to_pandas(resp, attributes="o").reset_index()
+    df = cast(pd.DataFrame, sdmx.to_pandas(resp, attributes="o")).reset_index()  # type: ignore[no-untyped-call]
 
     if df.empty:
         return df
@@ -124,7 +132,7 @@ def get_time_series(
     return df.reset_index(drop=True)
 
 
-def get_indicator_metadata(flow_id: str) -> dict:
+def get_indicator_metadata(flow_id: str) -> dict[str, object]:
     """
     Return title, description, and last_updated for a dataflow.
 
@@ -149,7 +157,9 @@ def get_indicator_metadata(flow_id: str) -> dict:
     flow = flows[flow_id]
     name = str(flow.name) if flow.name else ""
     raw_desc = str(flow.description) if getattr(flow, "description", None) else ""
-    description = BeautifulSoup(raw_desc, "html.parser").get_text(separator=" ", strip=True)
+    description = BeautifulSoup(raw_desc, "html.parser").get_text(
+        separator=" ", strip=True
+    )
 
     last_updated = ""
     for ann in getattr(flow, "annotations", []):
@@ -167,7 +177,9 @@ def get_indicator_metadata(flow_id: str) -> dict:
     }
 
 
-def search_indicators(keyword: str, *, max_results: int = 20) -> list[dict]:
+def search_indicators(
+    keyword: str, *, max_results: int = 20
+) -> list[dict[str, object]]:
     """
     Search ILOSTAT dataflows by keyword and return matching flows.
 
@@ -177,7 +189,7 @@ def search_indicators(keyword: str, *, max_results: int = 20) -> list[dict]:
     Each result dict has keys: id, title, is_modelled.
     """
     keyword_lower = keyword.lower()
-    matches: list[tuple[int, dict]] = []
+    matches: list[tuple[int, dict[str, object]]] = []
 
     try:
         resp = _client.dataflow()
@@ -199,17 +211,22 @@ def search_indicators(keyword: str, *, max_results: int = 20) -> list[dict]:
                     pass
                 break
 
-        matches.append((order, {
-            "id": flow_id,
-            "title": title,
-            "is_modelled": is_modelled(flow_id),
-        }))
+        matches.append(
+            (
+                order,
+                {
+                    "id": flow_id,
+                    "title": title,
+                    "is_modelled": is_modelled(flow_id),
+                },
+            )
+        )
 
     matches.sort(key=lambda x: x[0])
     return [m[1] for m in matches[:max_results]]
 
 
-def get_countries() -> list[dict]:
+def get_countries() -> list[dict[str, str]]:
     """
     Return the list of valid country/area codes from ILOSTAT's CL_AREA codelist.
 
@@ -220,12 +237,12 @@ def get_countries() -> list[dict]:
     """
     try:
         resp = _client.codelist("CL_AREA")
-    except Exception as exc:
+    except (HTTPError, RequestsConnectionError, Timeout) as exc:
         logger.warning("Failed to fetch CL_AREA codelist: %s", exc)
         return []
 
-    areas = []
-    for cl_id, codelist in resp.codelist.items():
+    areas: list[dict[str, str]] = []
+    for codelist in resp.codelist.values():
         # codelist.items is a plain dict {code_id: Code}, not a bound method
         for code_id, code in codelist.items.items():
             name = str(code.name) if code.name else str(code_id)

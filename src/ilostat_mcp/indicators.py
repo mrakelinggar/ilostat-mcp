@@ -10,8 +10,8 @@ Adding a new theme = adding entries here only — nothing else changes.
 FLOWS: dict[str, str] = {
     "unemployment_rate": "DF_UNE_DEAP_SEX_AGE_RT",
     "employment_to_pop": "DF_EMP_DWAP_SEX_AGE_RT",
-    "wages":             "DF_EAR_EMTA_SEX_CUR_NB",
-    "lfpr":              "DF_EAP_DWAP_SEX_AGE_RT",
+    "wages": "DF_EAR_EMTA_SEX_CUR_NB",
+    "lfpr": "DF_EAP_DWAP_SEX_AGE_RT",
 }
 
 # Which dimensions each flow uses (determines key dict construction in the client).
@@ -24,10 +24,10 @@ FLOW_DIMS: dict[str, str] = {
 }
 
 # Default dimension values
-AGE_TOTAL   = "AGE_YTHADULT_YGE15"   # adults 15+
-AGE_YOUTH   = "AGE_YTHADULT_Y15-24"  # youth 15-24
-SEX_TOTAL   = "SEX_T"                 # total (all sexes)
-CUR_DEFAULT = "CUR_TYPE_LCU"          # local currency units
+AGE_TOTAL = "AGE_YTHADULT_YGE15"  # adults 15+
+AGE_YOUTH = "AGE_YTHADULT_Y15-24"  # youth 15-24
+SEX_TOTAL = "SEX_T"  # total (all sexes)
+CUR_DEFAULT = "CUR_TYPE_LCU"  # local currency units
 
 # Keyword fragments that identify modelled/estimated flows (ILO modelled estimates).
 # A flow is "modelled" if its ID contains any of these strings.

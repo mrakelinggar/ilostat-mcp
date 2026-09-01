@@ -7,10 +7,10 @@ call — it populates once per process and stays for the session.
 
 from ilostat_mcp import sdmx_client
 
-_countries_cache: list[dict] | None = None
+_countries_cache: list[dict[str, str]] | None = None
 
 
-def get_cached_countries() -> list[dict]:
+def get_cached_countries() -> list[dict[str, str]]:
     """Return CL_AREA country list, cached for the lifetime of the process."""
     global _countries_cache
     if _countries_cache is None:
