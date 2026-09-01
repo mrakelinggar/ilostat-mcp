@@ -17,6 +17,7 @@ Design decisions (all resolved in Phase 0 + Phase 2b):
 - ConnectionError/Timeout/429/500/503 → RuntimeError with plain-English message
 """
 
+import html
 import logging
 from typing import cast
 
@@ -312,7 +313,7 @@ def get_countries() -> list[dict[str, str]]:
     for codelist in resp.codelist.values():
         # codelist.items is a plain dict {code_id: Code}, not a bound method
         for code_id, code in codelist.items.items():
-            name = str(code.name) if code.name else str(code_id)
+            name = html.unescape(str(code.name)) if code.name else str(code_id)
             areas.append({"code": str(code_id), "name": name})
         break  # only the first (and only) CL_AREA codelist
 

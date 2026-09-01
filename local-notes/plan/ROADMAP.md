@@ -195,10 +195,14 @@ Execution notes: `execution/phase02/` (same folder as Phase 2)
 **Goal:** Core differentiator #1 complete and tested.
 
 Outputs:
-- `src/ilostat_mcp/breaks.py` — SOURCE attr diff detection
-- `_breaks` field added to `get_time_series` response
-- `get_cagr` and `get_trend` warn+compute when range spans a detected break
+- `src/ilostat_mcp/breaks.py` — `detect_breaks()` (SOURCE attr diff detection) and
+  `break_years_in_range()` helper (ready for Phase 4 derived-stat tools to call)
+- `_breaks` field added to `get_time_series` response (first element of result list)
 - `tests/test_breaks.py` — verified against real ILOSTAT data (NGA, THA)
+
+Note: `get_cagr` and `get_trend` warn+compute when range spans a break — this
+is Phase 4 work (built alongside those tools). The mechanism is complete here;
+the tools that call it are Phase 4.
 
 Execution notes: `execution/phase03/`
 
