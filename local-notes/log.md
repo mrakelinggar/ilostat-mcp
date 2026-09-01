@@ -3,9 +3,42 @@
 ---
 
 ## TODO — start of next session
-- **Phase 3: Break detection** — `breaks.py`, `_breaks` field on `get_time_series`,
-  SOURCE attribute diff logic, `OBS_PRE_BREAK_VALUE` check.
-  See `plan/phase03/` (to be created).
+- **Phase 4: Derived stats + remaining tools** — `analysis/growth.py` (yoy, cagr, trend),
+  wire `get_yoy_change`, `get_cagr`, `get_trend` tools, `labor_market_snapshot` prompt,
+  `COUNTRY_CURRENCY` map. See ROADMAP for full spec.
+
+---
+
+## 2026-09-01 — Phase 3: Break detection
+
+Core differentiator #1 complete. 53/53 tests passing.
+
+**What was done:**
+- `breaks.py` — `detect_breaks(df)` and `break_years_in_range()`. SOURCE attribute diff
+  across consecutive years. Deduplicates to one source per year before comparing — ILOSTAT
+  flows return multiple rows per year (different sex/age dim values) that all share the same
+  SOURCE; without deduplication, the same break would be detected multiple times at the
+  year boundary. `OBS_PRE_BREAK_VALUE` not used — confirmed empty in all ILOSTAT data (Phase 0a).
+- `get_time_series` tool return type changed from `list[dict]` to `dict` with `"data"` and
+  `"_breaks"` keys. Always present, not opt-in. Empty data + empty breaks on 404.
+- `test_breaks.py` — 13 unit tests (pure logic) + 7 live integration tests against confirmed
+  break countries (NGA, THA wages) and clean series (DEU).
+
+**Key finding — Phase 0b data corrections:**
+- NGA (`DF_UNE_3EAP_SEX_AGE_DSB_RT`): series starts at 2011, no pre-2011 data in this flow.
+  Only break detectable is at 2019 (HS → HIES). Phase 0b's "break at 2011" came from a
+  different detection method (not SOURCE diff on consecutive observations).
+- THA wages: 2013=HIES, 2014+=LFS — one SOURCE transition, break at 2014.
+  Phase 0b listed both 2013 and 2014 but that was counting both sides of the transition,
+  not the year of the new source.
+- NGA flow uses youth age bands (`AGE_YTHBANDS_Y15-29`), not `AGE_YTHADULT_YGE15`.
+  Passing `AGE_TOTAL` returns empty — must omit age filter or pass youth code.
+
+**Checklist:**
+- [x] `breaks.py` with `detect_breaks` and `break_years_in_range`
+- [x] `get_time_series` returns `{data, _breaks}` — `test_server.py` updated
+- [x] 53/53 tests passing, ruff + mypy clean
+- [x] Committed and pushed to origin
 
 ---
 
