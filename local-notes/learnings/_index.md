@@ -16,3 +16,6 @@ made here. Feed this into your Obsidian vault after each session or when the pro
 - [TDS_GUIDELINES.md](TDS_GUIDELINES.md) — Towards Data Science submission guidelines (sourced August 2026). What passes, what gets rejected, the three filters to apply to every article idea before writing.
 - [python-static-analysis.md](python-static-analysis.md) — Ruff vs mypy: what each does, what each catches that the other misses, what they found on a real first run, and how to handle third-party libraries with no stubs.
 - [python-type-system.md](python-type-system.md) — Python's opt-in type system vs TypeScript's mandatory one. Why discipline on annotations matters, how `Any` is contagious, and why bare `dict` is a type coverage gap.
+- [solid-principles.md](solid-principles.md) — SOLID principles in plain English: SRP, OCP, and the registry + handler pattern. How to apply Open/Closed in practice and spot SRP violations in code review.
+- [code-quality-metrics.md](code-quality-metrics.md) — radon: cyclomatic complexity, maintainability index, raw counts. How to run a before/after analysis that turns a refactor into concrete interview evidence.
+- [git-advanced.md](git-advanced.md) — Multi-remote refspec patterns (local:remote mapping), the common mistake of omitting `:main`, rewriting history with git filter-repo, and GitHub's contributor cache behaviour.
