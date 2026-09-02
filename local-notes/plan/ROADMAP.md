@@ -302,6 +302,67 @@ Execution notes: `execution/phase04.5/`
 
 ---
 
+### Phase 4.6 — Modular architecture refactor
+
+**Goal:** Break `server.py` into focused, single-responsibility modules so that
+adding a new tool or dataflow is a one-file change with zero boilerplate.
+
+**Why here:** Phase 4.5 completed observability, which touched every tool function
+and made the bloat in `server.py` obvious. The benchmark (Phase 5) will expose the
+full tool surface to adversarial inputs — a modular, easily extensible codebase
+makes Phase 5 fixes faster and safer. Refactoring after Phase 5 would mean touching
+already-tested code; doing it now means the benchmark exercises the cleaner system.
+
+**Design principles applied:**
+- **Single Responsibility Principle** — each module owns one concern
+- **Open/Closed Principle** — adding a new tool/dataflow is extension (new file), not
+  modification (editing existing files)
+- **Registry + handler pattern** — tools register themselves; server.py is pure glue
+
+**Proposed module split:**
+
+| Module | Responsibility |
+|---|---|
+| `server.py` | FastMCP instance setup, tool/resource/prompt registration only — no logic |
+| `validation.py` | `_validate_dataflow`, `_validate_year`, `_validate_age_group`, `_validate_country` |
+| `tools/time_series.py` | `get_time_series` handler + `_fetch_df`, `_detect_gaps`, `_detection_start` |
+| `tools/derived.py` | `get_yoy_change`, `get_cagr`, `get_trend` handlers + `_build_break_warning` |
+| `tools/lookup.py` | `search_indicators`, `get_countries`, `get_indicator_metadata` handlers |
+| `tools/snapshot.py` | `labor_market_snapshot` prompt + `_resolve_country` |
+| `tools/__init__.py` | Re-exports all handlers for server.py to register |
+
+Adding a new dataflow in the future: edit `indicators.py` + create one handler file.
+Editing `server.py` is never required.
+
+**Before/after metrics (measure with `radon` before implementing):**
+- Cyclomatic complexity per function in `server.py`
+- Maintainability Index for `server.py`
+- Lines of code in `server.py`
+- Files that must change to add a new tool (target: 1, down from 2+)
+- Lines of boilerplate per new tool (target: 0, down from ~40)
+
+Record "before" numbers first. "After" numbers become the interview evidence.
+
+**Constraints:**
+- Zero behavior change — all 129 tests must pass before and after
+- Observability (spans + structlog) stays in the same logical locations: tool
+  handlers own their spans; `sdmx_client.py` owns API spans; `telemetry.py` owns setup
+- `sdmx_client.py` boundary unchanged — only file that imports `sdmx1`
+- All public tool signatures unchanged — MCP protocol interface is frozen
+
+**Outputs:**
+- `src/ilostat_mcp/validation.py` — all validation helpers
+- `src/ilostat_mcp/tools/` — handler modules as above
+- `src/ilostat_mcp/server.py` — stripped to <80 lines of registration code
+- `radon` added to dev dependencies
+- Before/after metrics doc in `execution/phase04.6/`
+- 129/129 tests passing; ruff + mypy clean
+
+Plan: `plan/phase04/phase4.6_modular_refactor_plan.md`
+Execution notes: `execution/phase04.6/`
+
+---
+
 ### Phase 5 — Benchmark
 
 **Goal:** Core differentiator #2 complete; results table ready for README.
