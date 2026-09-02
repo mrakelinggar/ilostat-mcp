@@ -18,20 +18,23 @@ Design decisions (all resolved in Phase 0 + Phase 2b):
 """
 
 import html
-import logging
+import time
 from typing import cast
 
 import cloudscraper
 import pandas as pd
 import sdmx
 import sdmx.message
+import structlog
 from bs4 import BeautifulSoup
 from requests.exceptions import ConnectionError as RequestsConnectionError
 from requests.exceptions import HTTPError, Timeout
 
 from ilostat_mcp.indicators import is_modelled
+from ilostat_mcp.telemetry import get_tracer
 
-logger = logging.getLogger(__name__)
+logger: structlog.BoundLogger = structlog.get_logger()
+_tracer = get_tracer(__name__)
 
 # ── Client setup ─────────────────────────────────────────────────────────────
 
@@ -129,26 +132,49 @@ def get_time_series(
     if geo is not None:
         key["GEO"] = geo
 
-    try:
-        resp = _client.data(
-            flow_id,
-            key=key,
-            params={"startPeriod": start, "endPeriod": end},
-        )
-    except Timeout as exc:
-        raise RuntimeError(
-            "ILOSTAT API request timed out — the server may be slow or unavailable."
-            " Try again."
-        ) from exc
-    except RequestsConnectionError as exc:
-        raise RuntimeError(
-            "Could not reach ILOSTAT's API — check your internet connection."
-        ) from exc
-    except HTTPError as exc:
-        if exc.response is not None and exc.response.status_code in (404, 400):
-            logger.debug("No data for %s/%s: %s", flow_id, country, exc)
-            return pd.DataFrame()
-        raise _plain_english_error(exc) from exc
+    t0 = time.perf_counter()
+    with _tracer.start_as_current_span("ilostat.api.data") as span:
+        span.set_attribute("flow_id", flow_id)
+        span.set_attribute("country", country)
+        try:
+            resp = _client.data(
+                flow_id,
+                key=key,
+                params={"startPeriod": start, "endPeriod": end},
+            )
+            duration_ms = int((time.perf_counter() - t0) * 1000)
+            span.set_attribute("http_status", 200)
+            logger.debug(
+                "api",
+                flow_id=flow_id,
+                country=country,
+                http_status=200,
+                duration_ms=duration_ms,
+            )
+        except Timeout as exc:
+            raise RuntimeError(
+                "ILOSTAT API request timed out — the server may be slow or"
+                " unavailable. Try again."
+            ) from exc
+        except RequestsConnectionError as exc:
+            raise RuntimeError(
+                "Could not reach ILOSTAT's API — check your internet connection."
+            ) from exc
+        except HTTPError as exc:
+            status = exc.response.status_code if exc.response is not None else None
+            duration_ms = int((time.perf_counter() - t0) * 1000)
+            if status is not None:
+                span.set_attribute("http_status", status)
+            logger.debug(
+                "api",
+                flow_id=flow_id,
+                country=country,
+                http_status=status,
+                duration_ms=duration_ms,
+            )
+            if exc.response is not None and exc.response.status_code in (404, 400):
+                return pd.DataFrame()
+            raise _plain_english_error(exc) from exc
 
     df = cast(pd.DataFrame, sdmx.to_pandas(resp, attributes="o")).reset_index()  # type: ignore[no-untyped-call]
 
@@ -183,22 +209,36 @@ def get_indicator_metadata(flow_id: str) -> dict[str, object]:
 
     Returns an empty dict if the flow ID is invalid (404).
     """
-    try:
-        resp = _client.dataflow(flow_id)
-    except Timeout as exc:
-        raise RuntimeError(
-            "ILOSTAT API request timed out — the server may be slow or unavailable."
-            " Try again."
-        ) from exc
-    except RequestsConnectionError as exc:
-        raise RuntimeError(
-            "Could not reach ILOSTAT's API — check your internet connection."
-        ) from exc
-    except HTTPError as exc:
-        if exc.response is not None and exc.response.status_code in (404, 400):
-            logger.debug("Unknown flow ID %s: %s", flow_id, exc)
-            return {}
-        raise _plain_english_error(exc) from exc
+    t0 = time.perf_counter()
+    with _tracer.start_as_current_span("ilostat.api.dataflow") as span:
+        span.set_attribute("flow_id", flow_id)
+        try:
+            resp = _client.dataflow(flow_id)
+            duration_ms = int((time.perf_counter() - t0) * 1000)
+            span.set_attribute("http_status", 200)
+            logger.debug(
+                "api", flow_id=flow_id, http_status=200, duration_ms=duration_ms
+            )
+        except Timeout as exc:
+            raise RuntimeError(
+                "ILOSTAT API request timed out — the server may be slow or"
+                " unavailable. Try again."
+            ) from exc
+        except RequestsConnectionError as exc:
+            raise RuntimeError(
+                "Could not reach ILOSTAT's API — check your internet connection."
+            ) from exc
+        except HTTPError as exc:
+            status = exc.response.status_code if exc.response is not None else None
+            duration_ms = int((time.perf_counter() - t0) * 1000)
+            if status is not None:
+                span.set_attribute("http_status", status)
+            logger.debug(
+                "api", flow_id=flow_id, http_status=status, duration_ms=duration_ms
+            )
+            if exc.response is not None and exc.response.status_code in (404, 400):
+                return {}
+            raise _plain_english_error(exc) from exc
 
     flows = resp.dataflow
     if flow_id not in flows:
@@ -233,19 +273,34 @@ def search_indicators(
     keyword_lower = keyword.lower()
     matches: list[tuple[int, dict[str, object]]] = []
 
-    try:
-        resp = _client.dataflow()
-    except Timeout as exc:
-        raise RuntimeError(
-            "ILOSTAT API request timed out — the server may be slow or unavailable."
-            " Try again."
-        ) from exc
-    except RequestsConnectionError as exc:
-        raise RuntimeError(
-            "Could not reach ILOSTAT's API — check your internet connection."
-        ) from exc
-    except HTTPError as exc:
-        raise _plain_english_error(exc) from exc
+    t0 = time.perf_counter()
+    with _tracer.start_as_current_span("ilostat.api.dataflow_all") as span:
+        span.set_attribute("keyword", keyword)
+        try:
+            resp = _client.dataflow()
+            duration_ms = int((time.perf_counter() - t0) * 1000)
+            span.set_attribute("http_status", 200)
+            logger.debug(
+                "api", keyword=keyword, http_status=200, duration_ms=duration_ms
+            )
+        except Timeout as exc:
+            raise RuntimeError(
+                "ILOSTAT API request timed out — the server may be slow or"
+                " unavailable. Try again."
+            ) from exc
+        except RequestsConnectionError as exc:
+            raise RuntimeError(
+                "Could not reach ILOSTAT's API — check your internet connection."
+            ) from exc
+        except HTTPError as exc:
+            status = exc.response.status_code if exc.response is not None else None
+            duration_ms = int((time.perf_counter() - t0) * 1000)
+            if status is not None:
+                span.set_attribute("http_status", status)
+            logger.debug(
+                "api", keyword=keyword, http_status=status, duration_ms=duration_ms
+            )
+            raise _plain_english_error(exc) from exc
 
     for flow_id, flow in resp.dataflow.items():
         title = str(flow.name) if flow.name else ""
@@ -286,19 +341,29 @@ def get_countries() -> list[dict[str, str]]:
     result (ILOSTAT always has countries), so callers cannot treat [] as
     "no countries".
     """
-    try:
-        resp = _client.codelist("CL_AREA")
-    except Timeout as exc:
-        raise RuntimeError(
-            "ILOSTAT API request timed out — the server may be slow or unavailable."
-            " Try again."
-        ) from exc
-    except RequestsConnectionError as exc:
-        raise RuntimeError(
-            "Could not reach ILOSTAT's API — check your internet connection."
-        ) from exc
-    except HTTPError as exc:
-        raise _plain_english_error(exc) from exc
+    t0 = time.perf_counter()
+    with _tracer.start_as_current_span("ilostat.api.codelist") as span:
+        try:
+            resp = _client.codelist("CL_AREA")
+            duration_ms = int((time.perf_counter() - t0) * 1000)
+            span.set_attribute("http_status", 200)
+            logger.debug("api", http_status=200, duration_ms=duration_ms)
+        except Timeout as exc:
+            raise RuntimeError(
+                "ILOSTAT API request timed out — the server may be slow or"
+                " unavailable. Try again."
+            ) from exc
+        except RequestsConnectionError as exc:
+            raise RuntimeError(
+                "Could not reach ILOSTAT's API — check your internet connection."
+            ) from exc
+        except HTTPError as exc:
+            status = exc.response.status_code if exc.response is not None else None
+            duration_ms = int((time.perf_counter() - t0) * 1000)
+            if status is not None:
+                span.set_attribute("http_status", status)
+            logger.debug("api", http_status=status, duration_ms=duration_ms)
+            raise _plain_english_error(exc) from exc
 
     areas: list[dict[str, str]] = []
     for codelist in resp.codelist.values():
