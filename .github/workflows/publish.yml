@@ -1,0 +1,33 @@
+name: Publish to PyPI
+
+# Triggered by pushing a version tag to the public repo (e.g. git tag v1.0.0).
+# Full configuration (PyPI project registration, trusted publishing) is done in Phase 6.
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  publish:
+    name: Build and publish
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # required for Trusted Publishing (OIDC)
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Build
+        run: uv build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        # No API token needed — uses Trusted Publishing (OIDC).
+        # Configure the PyPI project to trust this workflow in Phase 6.

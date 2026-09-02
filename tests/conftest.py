@@ -13,7 +13,7 @@ well within the 60-second per-test limit.
 
 import pytest
 
-from ilostat_mcp.indicators import AGE_TOTAL, CUR_DEFAULT, FLOWS, SEX_TOTAL
+from ilostat_mcp.indicators import AGE_TOTAL, CUR_DEFAULT, FLOWS
 from ilostat_mcp.sdmx_client import get_time_series
 
 
@@ -23,10 +23,8 @@ def prewarm_dsd_cache():
     # One small request per flow is enough to populate the DSD cache.
     # Failures here are non-fatal — individual tests will handle API errors.
     prewarm_calls = [
-        (FLOWS["unemployment_rate"], "DEU", "2023", "2023",
-         dict(age=AGE_TOTAL)),
-        (FLOWS["wages"], "DEU", "2023", "2023",
-         dict(cur=CUR_DEFAULT)),
+        (FLOWS["unemployment_rate"], "DEU", "2023", "2023", {"age": AGE_TOTAL}),
+        (FLOWS["wages"], "DEU", "2023", "2023", {"cur": CUR_DEFAULT}),
     ]
     for flow_id, country, start, end, kwargs in prewarm_calls:
         try:
