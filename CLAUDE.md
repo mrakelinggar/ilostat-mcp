@@ -255,21 +255,46 @@ repo via the `publish` branch's `.gitignore`. See "Repo setup" below.
 Two GitHub repos, one local directory:
 
 **Private repo (`ilostat-mcp-private`)** — full development workspace.
-- Remote alias: `origin` (was intended to be `private` — actual alias is `origin`)
+- Remote alias: `origin`
+- Local branch: `main`
 - Contains everything: `CLAUDE.md`, `local-notes/`, `.claude/`, source, tests, benchmark.
 - `.gitignore` excludes only build artifacts (`__pycache__`, `.venv`, `dist`, etc.).
 - Push here after every working session: `git push origin main`
 
 **Public repo (`ilostat-mcp`)** — portfolio-facing, clean.
 - Remote alias: `public`
+- Local branch: `publish` (exists only locally — it is **never** a branch on the public
+  remote; it maps to `main` on the public remote via the `:main` refspec below)
 - Contains only: `src/`, `tests/`, `pyproject.toml`, `smithery.yaml`, `benchmark/`, `README.md`
 - `.gitignore` additionally excludes `CLAUDE.md`, `local-notes/`, `.claude/`
-- A separate `publish` branch tracks what goes public. When ready to release:
-  1. Merge/cherry-pick production commits onto `publish`
-  2. `git push public publish:main`
-- The public README is different from any notes in `local-notes/` — it is written for external readers, not internal reference.
+- The public README is written for external readers, not internal reference.
 
-**Rule:** never push `main` directly to `public`. Always go through the `publish` branch so private files cannot accidentally reach the public remote.
+**Branch → remote mapping (memorise this):**
+
+| Local branch | Push command | Lands on |
+|---|---|---|
+| `main` | `git push origin main` | `ilostat-mcp-private` / `main` |
+| `publish` | `git push public publish:main` | `ilostat-mcp` / `main` |
+
+**Public push procedure — every step, every time:**
+1. `git checkout publish`
+2. `git merge main`
+3. `git rm -r --cached local-notes/ 2>/dev/null || true` — re-untrack if merge brought them back
+4. `git commit -m "chore: merge main → publish, untrack local-notes from public repo"` (only if step 3 staged anything)
+5. `git push public publish:main` — the `:main` is mandatory; omitting it creates a stale `publish` branch on the public remote
+6. `git checkout main`
+
+**Hard rules (all learned from real mistakes):**
+- Never run `git push public publish` — always `git push public publish:main`. The `:main`
+  refspec is what maps the local `publish` branch to the remote `main` branch. Without it,
+  git creates a `publish` branch on the public remote, which becomes the default branch and
+  hides the real code.
+- Never push `main` directly to `public`. Always go through `publish`.
+- The `publish` branch must never exist on the public remote. If `git branch -r | grep public/publish`
+  returns anything, delete it immediately: `git push public --delete publish`.
+- No `Co-Authored-By`, `Claude-Session`, or any AI attribution in any commit message — ever.
+  The harness default adds these; this rule overrides it. Check commit messages before pushing:
+  `git log --format="%B" -1` should contain no attribution lines.
 
 ---
 
