@@ -192,4 +192,8 @@ class TestGetTimeSeriesBreakField:
         from ilostat_mcp.server import get_time_series as tool_get_time_series
 
         result = tool_get_time_series(_UNE_FLOW, "PRK", "2010", "2023")
-        assert result == [{"_breaks": []}]
+        assert len(result) == 1
+        meta = result[0]
+        assert meta["_breaks"] == []
+        assert meta["_missing_years"] == []
+        assert "PRK" in str(meta["_no_data_reason"])

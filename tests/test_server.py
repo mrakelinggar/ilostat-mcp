@@ -30,7 +30,7 @@ _UNEMPLOYMENT_FLOW = "DF_UNE_DEAP_SEX_AGE_RT"
 _WAGE_FLOW = "DF_EAR_EMTA_SEX_CUR_NB"
 _GEO_FLOW = "DF_UNE_3EAP_SEX_AGE_GEO_RT"  # youth unemployment with GEO dimension
 _REQUIRED_SEARCH_KEYS = {"id", "title", "is_modelled"}
-_REQUIRED_METADATA_KEYS = {"id", "title", "description", "last_updated", "is_modelled"}
+_REQUIRED_METADATA_KEYS = {"id", "title", "description", "is_modelled"}
 _REQUIRED_TS_KEYS = {"time_period", "value", "obs_status"}
 
 
@@ -87,7 +87,11 @@ class TestGetTimeSeries:
     def test_prk_returns_only_metadata_with_empty_breaks(self):
         # PRK (North Korea) confirmed 404 in Phase 0
         result = get_time_series(_UNEMPLOYMENT_FLOW, "PRK", "2010", "2023")
-        assert result == [{"_breaks": []}]
+        assert len(result) == 1
+        meta = result[0]
+        assert meta["_breaks"] == []
+        assert meta["_missing_years"] == []
+        assert "PRK" in str(meta["_no_data_reason"])
 
     @pytest.mark.timeout(30)
     def test_wage_flow_auto_selects_cur_and_has_unit_measure(self):
@@ -173,7 +177,12 @@ class TestGetYoyChange:
     @pytest.mark.timeout(30)
     def test_prk_no_data_returns_metadata_only(self):
         result = get_yoy_change(_UNEMPLOYMENT_FLOW, "PRK", "2022")
-        assert result == [{"_breaks": [], "_break_warning": None}]
+        assert len(result) == 1
+        meta = result[0]
+        assert meta["_breaks"] == []
+        assert meta["_break_warning"] is None
+        assert meta["_missing_years"] == []
+        assert "PRK" in str(meta["_no_data_reason"])
 
     def test_invalid_age_group_raises(self):
         with pytest.raises(ValueError, match="age_group"):
@@ -214,7 +223,12 @@ class TestGetCagr:
     @pytest.mark.timeout(30)
     def test_prk_no_data_returns_metadata_only(self):
         result = get_cagr(_UNEMPLOYMENT_FLOW, "PRK", "2015", "2022")
-        assert result == [{"_breaks": [], "_break_warning": None}]
+        assert len(result) == 1
+        meta = result[0]
+        assert meta["_breaks"] == []
+        assert meta["_break_warning"] is None
+        assert meta["_missing_years"] == []
+        assert "PRK" in str(meta["_no_data_reason"])
 
     def test_start_equals_end_raises(self):
         with pytest.raises(ValueError, match="strictly before"):
@@ -269,7 +283,12 @@ class TestGetTrend:
     @pytest.mark.timeout(30)
     def test_prk_no_data_returns_metadata_only(self):
         result = get_trend(_UNEMPLOYMENT_FLOW, "PRK", "2015", "2022")
-        assert result == [{"_breaks": [], "_break_warning": None}]
+        assert len(result) == 1
+        meta = result[0]
+        assert meta["_breaks"] == []
+        assert meta["_break_warning"] is None
+        assert meta["_missing_years"] == []
+        assert "PRK" in str(meta["_no_data_reason"])
 
     def test_start_equals_end_raises(self):
         with pytest.raises(ValueError, match="strictly before"):

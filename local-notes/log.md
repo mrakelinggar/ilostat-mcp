@@ -10,6 +10,56 @@
 
 ---
 
+## 2026-09-02 — Phase 4.5: Resilience + input hardening
+
+Adversarial QA pass (subagent) + full fix sprint. 117/117 tests. ruff + mypy clean.
+
+**Validation hardening:**
+- `_validate_dataflow()` — allowlist check against `FLOW_DIMS` keys; unknown flows
+  rejected with list of valid IDs before any API call
+- `_validate_year()` now takes `dataflow_id`; validates against per-flow `FLOW_MIN_YEARS`
+  (discovered via live API probe) and current calendar year as upper bound
+- `FLOW_MIN_YEARS` added to `indicators.py` — earliest year any country has data per flow,
+  from Phase 4.5 API discovery (1983 for unemployment/LFPR/emp-to-pop, 2000 for wages,
+  2008–2011 for benchmark-specific flows)
+- `DF_UNE_3EAP_SEX_AGE_DSB_RT` dim fixed from `"age"` to `None` — `AGE_YTHADULT_YGE15`
+  gives 404 on this flow (Phase 4.5 discovery); omitting AGE key works correctly
+
+**Gap detection:**
+- `_detect_gaps()` in `server.py` — returns list of years in requested range with no
+  observation; surfaced as `_missing_years` in all tool metadata dicts
+- `_no_data_reason` added to all tool metadata dicts — plain-English string when a
+  country has no data in the dataflow; was previously a bare `[{_breaks: []}]` with
+  no context for the agent
+
+**Bug fixes (from QA agent):**
+- Bug 1/2: `get_yoy_change`/`get_cagr`/`get_trend` now catch `ValueError` from growth
+  functions and re-raise with user-facing message + missing years context
+- Bug 3: `labor_market_snapshot("")` now raises immediately (was returning a broken
+  prompt with no ISO codes)
+- Bug 4: `get_cagr` and `get_trend` fetch one extra year before `start_year`
+  (`_detection_start()` helper) so `detect_breaks()` can catch a break at `start_year`
+  — previously the break was silently missed because there was no prior row to compare
+
+**Output cleanup:**
+- `_KEEP_COLUMNS` in `sdmx_client.py` trimmed: `freq`, `sex`, `age`, `cur`, `geo`,
+  `note_classif` all dropped — confirmed constant or always-empty across all registered
+  flows. Output rows now contain only: `time_period`, `value`, `obs_status`, `source`,
+  `unit_measure`
+- `last_updated` removed from `get_indicator_metadata` — ILOSTAT's `LAST_UPDATE`
+  annotation is never populated; the field always returned `""`
+- `obs_status` kept — confirmed to carry `"B"` on break-year observations for PAK, NGA
+
+**Tool descriptions:** `get_yoy_change`, `get_cagr`, `get_trend` updated to document
+`_missing_years` and `_no_data_reason` in metadata schema.
+
+QA report: `local-notes/execution/phase04.5/qa_report.md`
+Phase 3/4 execution notes written: `execution/phase03/`, `execution/phase04/`
+
+NFR still open: structlog + OpenTelemetry not yet implemented (main Phase 4.5 work).
+
+---
+
 ## 2026-09-01 — Phase 4: Derived stats + remaining tools
 
 All 7 tools now implemented. 116/116 tests passing.

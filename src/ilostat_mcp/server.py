@@ -5,6 +5,7 @@ All business logic lives in sdmx_client.py, resources.py, breaks.py,
 and analysis/. This file registers tools, prompts, and wires entry points.
 """
 
+import datetime
 from typing import cast
 
 import pandas as pd
@@ -12,7 +13,16 @@ from fastmcp import FastMCP
 
 from ilostat_mcp import breaks, resources, sdmx_client
 from ilostat_mcp.analysis import growth
-from ilostat_mcp.indicators import AGE_TOTAL, AGE_YOUTH, CUR_DEFAULT, FLOW_DIMS
+from ilostat_mcp.indicators import (
+    AGE_TOTAL,
+    AGE_YOUTH,
+    CUR_DEFAULT,
+    FLOW_DIMS,
+    FLOW_MIN_YEARS,
+)
+
+# Upper year bound applied to all dataflow validation — current calendar year.
+_CURRENT_YEAR: int = datetime.date.today().year
 
 mcp = FastMCP("ilostat-mcp")
 
@@ -46,16 +56,37 @@ _AGE_GROUP_MAP: dict[str, str] = {
 }
 
 
+def _validate_dataflow(dataflow_id: str) -> None:
+    """Raise ValueError if dataflow_id is not in the registered allowlist."""
+    if dataflow_id not in FLOW_DIMS:
+        valid = ", ".join(sorted(FLOW_DIMS.keys()))
+        raise ValueError(
+            f"Unknown dataflow {dataflow_id!r}. Valid dataflows: {valid}"
+        )
+
+
 def _validate_age_group(age_group: str) -> None:
     """Raise ValueError if age_group is not a recognised value."""
     if age_group not in _AGE_GROUP_MAP:
         raise ValueError(f"age_group must be 'total' or 'youth' (got {age_group!r})")
 
 
-def _validate_year(label: str, year: str) -> None:
-    """Raise ValueError if year is not a 4-digit numeric string."""
+def _validate_year(label: str, year: str, dataflow_id: str) -> None:
+    """
+    Raise ValueError if year is not a valid 4-digit year for the given dataflow.
+
+    Checks format, then validates against the per-flow minimum year from
+    FLOW_MIN_YEARS and the current calendar year as the upper bound.
+    """
     if not (year.isdigit() and len(year) == 4):
         raise ValueError(f"{label} must be a 4-digit year (got {year!r})")
+    yr = int(year)
+    min_year = FLOW_MIN_YEARS.get(dataflow_id, 1900)
+    if not (min_year <= yr <= _CURRENT_YEAR):
+        raise ValueError(
+            f"{label} for {dataflow_id} must be between {min_year}"
+            f" and {_CURRENT_YEAR} (got {yr})"
+        )
 
 
 def _validate_country(country: str) -> None:
@@ -66,6 +97,36 @@ def _validate_country(country: str) -> None:
             f"Unknown country code {country!r}."
             " Use get_countries() to find valid codes."
         )
+
+
+def _detect_gaps(df: pd.DataFrame, start_year: str, end_year: str) -> list[str]:
+    """
+    Return years in [start_year, end_year] absent from the DataFrame.
+
+    Compares the expected annual sequence against the time_period values actually
+    returned by ILOSTAT. Years with no observation are returned as strings so
+    the caller can include them in the metadata dict alongside _breaks.
+    Returns an empty list for an empty DataFrame (no data at all, not a gap).
+    """
+    if df.empty:
+        return []
+    present = set(df["time_period"].astype(str).unique())
+    expected = [str(y) for y in range(int(start_year), int(end_year) + 1)]
+    return [y for y in expected if y not in present]
+
+
+def _detection_start(start_year: str, dataflow_id: str) -> str:
+    """
+    Return the fetch start year to use for break detection.
+
+    One year before start_year, clamped to the flow's minimum year.
+    Fetching an extra year before the requested range lets detect_breaks()
+    see a source transition that occurs AT start_year — without a prior row
+    there is no previous source to compare against, so the break is silently
+    missed.
+    """
+    min_year = FLOW_MIN_YEARS.get(dataflow_id, 1900)
+    return str(max(min_year, int(start_year) - 1))
 
 
 def _fetch_df(
@@ -155,13 +216,16 @@ def get_indicator_metadata(dataflow_id: str) -> dict[str, object]:
 @mcp.tool(
     description=(
         "Fetch a time series from ILOSTAT. Returns a list where the FIRST element "
-        "is series metadata: {_breaks: [...]} listing methodology breaks detected "
-        "(each break: {year, source_before, source_after}; empty list if none). "
-        "Remaining elements are annual observations with columns: time_period, "
-        "value, obs_status, source, unit_measure. "
+        "is series metadata: {_breaks, _missing_years, _no_data_reason}. "
+        "_breaks lists methodology breaks (each: {year, source_before, source_after}; "
+        "empty if none). _missing_years lists years in the requested range with no "
+        "observation (gaps in ILOSTAT's data, not errors). _no_data_reason is set "
+        "when the country has no data at all in this dataflow. "
+        "Remaining elements are annual observations: time_period, value, obs_status, "
+        "source, unit_measure. "
         "Do not compute multi-year trends across a break without flagging it. "
         "age_group: 'total' (default, adults 15+) or 'youth' (15-29); ignored "
-        "for wage flows. Returns [{_breaks: []}] if country has no data."
+        "for wage flows."
     )
 )
 def get_time_series(
@@ -171,9 +235,10 @@ def get_time_series(
     end_year: str,
     age_group: str = "total",
 ) -> list[dict[str, object]]:
+    _validate_dataflow(dataflow_id)
     _validate_age_group(age_group)
-    _validate_year("start_year", start_year)
-    _validate_year("end_year", end_year)
+    _validate_year("start_year", start_year, dataflow_id)
+    _validate_year("end_year", end_year, dataflow_id)
     if start_year > end_year:
         raise ValueError(
             f"start_year must be <= end_year (got {start_year} to {end_year})"
@@ -182,18 +247,35 @@ def get_time_series(
     df = _fetch_df(dataflow_id, country, start_year, end_year, age_group)
     detected_breaks: list[dict[str, object]] = breaks.detect_breaks(df)
     if df.empty:
-        return [{"_breaks": detected_breaks}]
+        return [
+            {
+                "_breaks": detected_breaks,
+                "_missing_years": [],
+                "_no_data_reason": (
+                    f"No data available for {country} in {dataflow_id}."
+                ),
+            }
+        ]
+    missing = _detect_gaps(df, start_year, end_year)
     rows = cast(list[dict[str, object]], df.to_dict(orient="records"))
-    return [{"_breaks": detected_breaks}, *rows]
+    meta: dict[str, object] = {
+        "_breaks": detected_breaks,
+        "_missing_years": missing,
+        "_no_data_reason": None,
+    }
+    return [meta, *rows]
 
 
 @mcp.tool(
     description=(
         "Year-over-year percentage change for a single year. "
         "Compares the value at `year` to `year - 1`. "
-        "Returns a list where result[0] is metadata: {_breaks, _break_warning} "
+        "Returns a list where result[0] is metadata: "
+        "{_breaks, _break_warning, _missing_years, _no_data_reason} "
         "and result[1] is {year, value, prev_year, prev_value, change_pct}. "
-        "Returns [{_breaks: [], _break_warning: null}] if no data. "
+        "_missing_years lists years in the fetch window with no observation. "
+        "_no_data_reason is set (and result has only 1 element) when the country "
+        "has no data in this dataflow. "
         "age_group: 'total' (default) or 'youth'."
     )
 )
@@ -203,8 +285,9 @@ def get_yoy_change(
     year: str,
     age_group: str = "total",
 ) -> list[dict[str, object]]:
+    _validate_dataflow(dataflow_id)
     _validate_age_group(age_group)
-    _validate_year("year", year)
+    _validate_year("year", year, dataflow_id)
     _validate_country(country)
 
     prev_year = str(int(year) - 1)
@@ -212,22 +295,50 @@ def get_yoy_change(
     detected_breaks = breaks.detect_breaks(df)
 
     if df.empty:
-        return [{"_breaks": [], "_break_warning": None}]
+        return [
+            {
+                "_breaks": [],
+                "_break_warning": None,
+                "_missing_years": [],
+                "_no_data_reason": (
+                    f"No data available for {country} in {dataflow_id}."
+                ),
+            }
+        ]
 
+    missing = _detect_gaps(df, prev_year, year)
     warning = _build_break_warning(detected_breaks, prev_year, year)
-    stat = growth.yoy(df, year)
-    return [{"_breaks": detected_breaks, "_break_warning": warning}, stat]
+    try:
+        stat = growth.yoy(df, year)
+    except ValueError as exc:
+        gap_info = f" Missing years in window: {missing}." if missing else ""
+        raise ValueError(
+            f"Cannot compute year-over-year change for {country}"
+            f" in {dataflow_id}: {exc}{gap_info}"
+        ) from exc
+    return [
+        {
+            "_breaks": detected_breaks,
+            "_break_warning": warning,
+            "_missing_years": missing,
+            "_no_data_reason": None,
+        },
+        stat,
+    ]
 
 
 @mcp.tool(
     description=(
         "Compound annual growth rate (CAGR) between start_year and end_year. "
-        "Returns a list where result[0] is metadata: {_breaks, _break_warning} "
+        "Returns a list where result[0] is metadata: "
+        "{_breaks, _break_warning, _missing_years, _no_data_reason} "
         "and result[1] is "
         "{start_year, end_year, start_value, end_value, cagr_pct, n_years}. "
         "A _break_warning is set if any methodology break falls within the range "
         "-- CAGR across a break is unreliable. "
-        "Returns [{_breaks: [], _break_warning: null}] if no data. "
+        "_missing_years lists years in the range with no observation. "
+        "_no_data_reason is set (and result has only 1 element) when the country "
+        "has no data in this dataflow. "
         "start_year must be strictly before end_year. "
         "age_group: 'total' (default) or 'youth'."
     )
@@ -239,9 +350,10 @@ def get_cagr(
     end_year: str,
     age_group: str = "total",
 ) -> list[dict[str, object]]:
+    _validate_dataflow(dataflow_id)
     _validate_age_group(age_group)
-    _validate_year("start_year", start_year)
-    _validate_year("end_year", end_year)
+    _validate_year("start_year", start_year, dataflow_id)
+    _validate_year("end_year", end_year, dataflow_id)
     if start_year >= end_year:
         raise ValueError(
             f"start_year must be strictly before end_year"
@@ -249,26 +361,56 @@ def get_cagr(
         )
     _validate_country(country)
 
-    df = _fetch_df(dataflow_id, country, start_year, end_year, age_group)
+    # Fetch one year before start_year so detect_breaks() can see a transition
+    # that occurs AT start_year (needs a prior row to compare sources).
+    detect_start = _detection_start(start_year, dataflow_id)
+    df = _fetch_df(dataflow_id, country, detect_start, end_year, age_group)
     detected_breaks = breaks.detect_breaks(df)
 
     if df.empty:
-        return [{"_breaks": [], "_break_warning": None}]
+        return [
+            {
+                "_breaks": [],
+                "_break_warning": None,
+                "_missing_years": [],
+                "_no_data_reason": (
+                    f"No data available for {country} in {dataflow_id}."
+                ),
+            }
+        ]
 
+    missing = _detect_gaps(df, start_year, end_year)
     warning = _build_break_warning(detected_breaks, start_year, end_year)
-    stat = growth.cagr(df, start_year, end_year)
-    return [{"_breaks": detected_breaks, "_break_warning": warning}, stat]
+    try:
+        stat = growth.cagr(df, start_year, end_year)
+    except ValueError as exc:
+        gap_info = f" Missing years in range: {missing}." if missing else ""
+        raise ValueError(
+            f"Cannot compute CAGR for {country} in {dataflow_id}: {exc}{gap_info}"
+        ) from exc
+    return [
+        {
+            "_breaks": detected_breaks,
+            "_break_warning": warning,
+            "_missing_years": missing,
+            "_no_data_reason": None,
+        },
+        stat,
+    ]
 
 
 @mcp.tool(
     description=(
         "OLS linear trend between start_year and end_year. "
-        "Returns a list where result[0] is metadata: {_breaks, _break_warning} "
+        "Returns a list where result[0] is metadata: "
+        "{_breaks, _break_warning, _missing_years, _no_data_reason} "
         "and result[1] is "
         "{start_year, end_year, slope, intercept, r_squared, n_points}. "
         "A _break_warning is set if any methodology break falls within the range "
         "-- a trend across a break is unreliable. "
-        "Returns [{_breaks: [], _break_warning: null}] if no data. "
+        "_missing_years lists years in the range with no observation. "
+        "_no_data_reason is set (and result has only 1 element) when the country "
+        "has no data in this dataflow. "
         "start_year must be strictly before end_year. "
         "age_group: 'total' (default) or 'youth'."
     )
@@ -280,9 +422,10 @@ def get_trend(
     end_year: str,
     age_group: str = "total",
 ) -> list[dict[str, object]]:
+    _validate_dataflow(dataflow_id)
     _validate_age_group(age_group)
-    _validate_year("start_year", start_year)
-    _validate_year("end_year", end_year)
+    _validate_year("start_year", start_year, dataflow_id)
+    _validate_year("end_year", end_year, dataflow_id)
     if start_year >= end_year:
         raise ValueError(
             f"start_year must be strictly before end_year"
@@ -290,15 +433,42 @@ def get_trend(
         )
     _validate_country(country)
 
-    df = _fetch_df(dataflow_id, country, start_year, end_year, age_group)
+    # Fetch one year before start_year so detect_breaks() can see a transition
+    # that occurs AT start_year (needs a prior row to compare sources).
+    detect_start = _detection_start(start_year, dataflow_id)
+    df = _fetch_df(dataflow_id, country, detect_start, end_year, age_group)
     detected_breaks = breaks.detect_breaks(df)
 
     if df.empty:
-        return [{"_breaks": [], "_break_warning": None}]
+        return [
+            {
+                "_breaks": [],
+                "_break_warning": None,
+                "_missing_years": [],
+                "_no_data_reason": (
+                    f"No data available for {country} in {dataflow_id}."
+                ),
+            }
+        ]
 
+    missing = _detect_gaps(df, start_year, end_year)
     warning = _build_break_warning(detected_breaks, start_year, end_year)
-    stat = growth.trend(df, start_year, end_year)
-    return [{"_breaks": detected_breaks, "_break_warning": warning}, stat]
+    try:
+        stat = growth.trend(df, start_year, end_year)
+    except ValueError as exc:
+        gap_info = f" Missing years in range: {missing}." if missing else ""
+        raise ValueError(
+            f"Cannot compute trend for {country} in {dataflow_id}: {exc}{gap_info}"
+        ) from exc
+    return [
+        {
+            "_breaks": detected_breaks,
+            "_break_warning": warning,
+            "_missing_years": missing,
+            "_no_data_reason": None,
+        },
+        stat,
+    ]
 
 
 # ── Prompts ───────────────────────────────────────────────────────────────────
@@ -365,6 +535,11 @@ def labor_market_snapshot(countries: str) -> str:
     """
     inputs = [c.strip() for c in countries.split(",") if c.strip()]
     n = len(inputs)
+    if n == 0:
+        raise ValueError(
+            "countries must not be empty."
+            " Provide 1-3 country names or ISO-3 codes, comma-separated."
+        )
     if n > 3:
         raise ValueError(
             f"labor_market_snapshot accepts 1-3 countries, got {n}: {inputs}."

@@ -43,23 +43,33 @@ class TestGetTimeSeries:
     def test_required_columns_present(self):
         """Output must contain the documented column set."""
         df = get_time_series(UNE_FLOW, "DEU", "2020", "2023", age=AGE_TOTAL)
-        for col in ("time_period", "value", "obs_status", "source", "freq", "sex"):
+        for col in ("time_period", "value", "obs_status", "source", "unit_measure"):
             assert col in df.columns, f"Missing column: {col}"
 
+    def test_noise_columns_absent(self):
+        """Constant and empty columns must be stripped from output."""
+        df = get_time_series(UNE_FLOW, "DEU", "2020", "2023", age=AGE_TOTAL)
+        for col in ("freq", "sex", "age", "cur", "geo", "note_classif"):
+            assert col not in df.columns, f"Noise column still present: {col}"
+
     def test_freq_filter_annual_only(self):
-        """freq='A' filter must return only annual observations."""
+        """Annual filter drops sub-annual rows; time_period must be 4-digit years."""
         df = get_time_series(UNE_FLOW, "DEU", "2015", "2023", freq="A", age=AGE_TOTAL)
-        assert (df["freq"] == "A").all(), "Non-annual rows leaked through"
+        # freq column is no longer returned, but the filter still runs —
+        # verify by confirming every time_period is a 4-digit year string.
+        assert all(
+            tp.isdigit() and len(tp) == 4 for tp in df["time_period"]
+        ), "Non-annual time_period leaked through annual filter"
 
     def test_value_column_is_numeric(self):
         """Values should be numeric (float), not strings."""
         df = get_time_series(UNE_FLOW, "DEU", "2018", "2022", age=AGE_TOTAL)
         assert pd.api.types.is_numeric_dtype(df["value"]), "value column is not numeric"
 
-    def test_wages_flow_uses_cur_dimension(self):
-        """Wage flow should include a 'cur' column when cur is passed."""
+    def test_wages_flow_cur_not_in_output(self):
+        """cur is a per-call constant — it must be stripped from output rows."""
         df = get_time_series(WAG_FLOW, "DEU", "2015", "2022", cur=CUR_DEFAULT)
-        assert "cur" in df.columns, "'cur' column missing from wage response"
+        assert "cur" not in df.columns, "'cur' noise column should not appear in output"
 
     def test_no_data_country_returns_empty_dataframe(self):
         """PRK (North Korea) has no ILOSTAT data — must return empty DataFrame."""
@@ -112,10 +122,10 @@ class TestGetIndicatorMetadata:
         meta = get_indicator_metadata("DF_FAKE_FLOW_DOES_NOT_EXIST")
         assert meta == {} or not meta, "Expected empty dict for invalid flow"
 
-    def test_last_updated_present(self):
-        """Metadata should include a last_updated field (may be empty string)."""
+    def test_last_updated_absent(self):
+        """last_updated is never populated by ILOSTAT — must not appear in output."""
         meta = get_indicator_metadata(UNE_FLOW)
-        assert "last_updated" in meta, "last_updated key missing from metadata"
+        assert "last_updated" not in meta, "last_updated should be dropped"
 
     def test_is_modelled_flag_false_for_survey_flow(self):
         """Our canonical flows are survey-based, not modelled estimates."""

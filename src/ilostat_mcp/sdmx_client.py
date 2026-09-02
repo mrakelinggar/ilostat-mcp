@@ -47,21 +47,20 @@ _client.session = _scraper
 _client._send_kwargs["timeout"] = _TIMEOUT_SECONDS
 
 # Columns to keep in get_time_series output (snake_case after lowering).
-# MEASURE is always single-valued per flow — dropped as uninformative.
-# unit_measure_type, unit_mult, note_source, note_indicator, decimals, bounds
-# are either metadata noise or empty for our canonical flows.
+# Dropped as uninformative:
+# - freq: always "A" — we filter to annual before returning
+# - sex: always "SEX_T" — hardcoded in every fetch
+# - age/cur/geo: per-call constants that reflect the caller's own input
+# - note_classif: always empty in ILOSTAT responses
+# - unit_measure_type, unit_mult, note_source, note_indicator, decimals, bounds:
+#   metadata noise or empty
+# obs_status is kept — "B" appears on break-year observations and has real signal.
 _KEEP_COLUMNS = {
     "time_period",
     "value",
     "obs_status",
     "source",
     "unit_measure",
-    "freq",
-    "sex",
-    "age",
-    "cur",
-    "geo",
-    "note_classif",
 }
 
 
@@ -212,18 +211,10 @@ def get_indicator_metadata(flow_id: str) -> dict[str, object]:
         separator=" ", strip=True
     )
 
-    last_updated = ""
-    for ann in getattr(flow, "annotations", []):
-        # sdmx1 uses ann.type for the annotation classification (e.g. "LAST_UPDATE")
-        if getattr(ann, "type", None) == "LAST_UPDATE":
-            last_updated = str(ann.text) if ann.text else ""
-            break
-
     return {
         "id": flow_id,
         "title": name,
         "description": description,
-        "last_updated": last_updated,
         "is_modelled": is_modelled(flow_id),
     }
 
