@@ -6,12 +6,14 @@ and analysis/. This file registers tools, prompts, and wires entry points.
 """
 
 import datetime
+import time
 from typing import cast
 
 import pandas as pd
+import structlog
 from fastmcp import FastMCP
 
-from ilostat_mcp import breaks, resources, sdmx_client
+from ilostat_mcp import breaks, resources, sdmx_client, telemetry
 from ilostat_mcp.analysis import growth
 from ilostat_mcp.indicators import (
     AGE_TOTAL,
@@ -20,11 +22,15 @@ from ilostat_mcp.indicators import (
     FLOW_DIMS,
     FLOW_MIN_YEARS,
 )
+from ilostat_mcp.telemetry import get_tracer
 
 # Upper year bound applied to all dataflow validation — current calendar year.
 _CURRENT_YEAR: int = datetime.date.today().year
 
 mcp = FastMCP("ilostat-mcp")
+
+logger: structlog.BoundLogger = structlog.get_logger()
+_tracer = get_tracer(__name__)
 
 
 # ── Resources ─────────────────────────────────────────────────────────────────
@@ -189,7 +195,31 @@ def _build_break_warning(
     )
 )
 def search_indicators(keyword: str) -> list[dict[str, object]]:
-    return sdmx_client.search_indicators(keyword)
+    t0 = time.perf_counter()
+    with _tracer.start_as_current_span("tool.search_indicators") as span:
+        span.set_attribute("keyword", keyword)
+        try:
+            result = sdmx_client.search_indicators(keyword)
+            span.set_attribute("outcome", "success")
+            logger.info(
+                "tool",
+                tool="search_indicators",
+                keyword=keyword,
+                outcome="success",
+                duration_ms=int((time.perf_counter() - t0) * 1000),
+            )
+            return result
+        except (ValueError, RuntimeError) as exc:
+            span.set_attribute("outcome", "error")
+            span.set_attribute("error.message", str(exc))
+            logger.info(
+                "tool",
+                tool="search_indicators",
+                keyword=keyword,
+                outcome="error",
+                duration_ms=int((time.perf_counter() - t0) * 1000),
+            )
+            raise
 
 
 @mcp.tool(
@@ -199,7 +229,28 @@ def search_indicators(keyword: str) -> list[dict[str, object]]:
     )
 )
 def get_countries() -> list[dict[str, str]]:
-    return resources.get_cached_countries()
+    t0 = time.perf_counter()
+    with _tracer.start_as_current_span("tool.get_countries") as span:
+        try:
+            result = resources.get_cached_countries()
+            span.set_attribute("outcome", "success")
+            logger.info(
+                "tool",
+                tool="get_countries",
+                outcome="success",
+                duration_ms=int((time.perf_counter() - t0) * 1000),
+            )
+            return result
+        except (ValueError, RuntimeError) as exc:
+            span.set_attribute("outcome", "error")
+            span.set_attribute("error.message", str(exc))
+            logger.info(
+                "tool",
+                tool="get_countries",
+                outcome="error",
+                duration_ms=int((time.perf_counter() - t0) * 1000),
+            )
+            raise
 
 
 @mcp.tool(
@@ -210,7 +261,32 @@ def get_countries() -> list[dict[str, str]]:
     )
 )
 def get_indicator_metadata(dataflow_id: str) -> dict[str, object]:
-    return sdmx_client.get_indicator_metadata(dataflow_id)
+    t0 = time.perf_counter()
+    with _tracer.start_as_current_span("tool.get_indicator_metadata") as span:
+        span.set_attribute("dataflow_id", dataflow_id)
+        try:
+            result = sdmx_client.get_indicator_metadata(dataflow_id)
+            outcome = "empty" if result == {} else "success"
+            span.set_attribute("outcome", outcome)
+            logger.info(
+                "tool",
+                tool="get_indicator_metadata",
+                dataflow_id=dataflow_id,
+                outcome=outcome,
+                duration_ms=int((time.perf_counter() - t0) * 1000),
+            )
+            return result
+        except (ValueError, RuntimeError) as exc:
+            span.set_attribute("outcome", "error")
+            span.set_attribute("error.message", str(exc))
+            logger.info(
+                "tool",
+                tool="get_indicator_metadata",
+                dataflow_id=dataflow_id,
+                outcome="error",
+                duration_ms=int((time.perf_counter() - t0) * 1000),
+            )
+            raise
 
 
 @mcp.tool(
@@ -235,35 +311,71 @@ def get_time_series(
     end_year: str,
     age_group: str = "total",
 ) -> list[dict[str, object]]:
-    _validate_dataflow(dataflow_id)
-    _validate_age_group(age_group)
-    _validate_year("start_year", start_year, dataflow_id)
-    _validate_year("end_year", end_year, dataflow_id)
-    if start_year > end_year:
-        raise ValueError(
-            f"start_year must be <= end_year (got {start_year} to {end_year})"
-        )
-    _validate_country(country)
-    df = _fetch_df(dataflow_id, country, start_year, end_year, age_group)
-    detected_breaks: list[dict[str, object]] = breaks.detect_breaks(df)
-    if df.empty:
-        return [
-            {
-                "_breaks": detected_breaks,
-                "_missing_years": [],
-                "_no_data_reason": (
-                    f"No data available for {country} in {dataflow_id}."
-                ),
-            }
-        ]
-    missing = _detect_gaps(df, start_year, end_year)
-    rows = cast(list[dict[str, object]], df.to_dict(orient="records"))
-    meta: dict[str, object] = {
-        "_breaks": detected_breaks,
-        "_missing_years": missing,
-        "_no_data_reason": None,
-    }
-    return [meta, *rows]
+    t0 = time.perf_counter()
+    with _tracer.start_as_current_span("tool.get_time_series") as span:
+        span.set_attribute("dataflow_id", dataflow_id)
+        span.set_attribute("country", country)
+        span.set_attribute("start_year", start_year)
+        span.set_attribute("end_year", end_year)
+        span.set_attribute("age_group", age_group)
+        try:
+            _validate_dataflow(dataflow_id)
+            _validate_age_group(age_group)
+            _validate_year("start_year", start_year, dataflow_id)
+            _validate_year("end_year", end_year, dataflow_id)
+            if start_year > end_year:
+                raise ValueError(
+                    f"start_year must be <= end_year (got {start_year} to {end_year})"
+                )
+            _validate_country(country)
+            df = _fetch_df(dataflow_id, country, start_year, end_year, age_group)
+            detected_breaks: list[dict[str, object]] = breaks.detect_breaks(df)
+            if df.empty:
+                result: list[dict[str, object]] = [
+                    {
+                        "_breaks": detected_breaks,
+                        "_missing_years": [],
+                        "_no_data_reason": (
+                            f"No data available for {country} in {dataflow_id}."
+                        ),
+                    }
+                ]
+            else:
+                missing = _detect_gaps(df, start_year, end_year)
+                rows = cast(list[dict[str, object]], df.to_dict(orient="records"))
+                meta: dict[str, object] = {
+                    "_breaks": detected_breaks,
+                    "_missing_years": missing,
+                    "_no_data_reason": None,
+                }
+                result = [meta, *rows]
+            outcome = (
+                "empty"
+                if len(result) == 1 and result[0].get("_no_data_reason")
+                else "success"
+            )
+            span.set_attribute("outcome", outcome)
+            logger.info(
+                "tool",
+                tool="get_time_series",
+                dataflow_id=dataflow_id,
+                country=country,
+                outcome=outcome,
+                duration_ms=int((time.perf_counter() - t0) * 1000),
+            )
+            return result
+        except (ValueError, RuntimeError) as exc:
+            span.set_attribute("outcome", "error")
+            span.set_attribute("error.message", str(exc))
+            logger.info(
+                "tool",
+                tool="get_time_series",
+                dataflow_id=dataflow_id,
+                country=country,
+                outcome="error",
+                duration_ms=int((time.perf_counter() - t0) * 1000),
+            )
+            raise
 
 
 @mcp.tool(
@@ -285,46 +397,82 @@ def get_yoy_change(
     year: str,
     age_group: str = "total",
 ) -> list[dict[str, object]]:
-    _validate_dataflow(dataflow_id)
-    _validate_age_group(age_group)
-    _validate_year("year", year, dataflow_id)
-    _validate_country(country)
+    t0 = time.perf_counter()
+    with _tracer.start_as_current_span("tool.get_yoy_change") as span:
+        span.set_attribute("dataflow_id", dataflow_id)
+        span.set_attribute("country", country)
+        span.set_attribute("year", year)
+        span.set_attribute("age_group", age_group)
+        try:
+            _validate_dataflow(dataflow_id)
+            _validate_age_group(age_group)
+            _validate_year("year", year, dataflow_id)
+            _validate_country(country)
 
-    prev_year = str(int(year) - 1)
-    df = _fetch_df(dataflow_id, country, prev_year, year, age_group)
-    detected_breaks = breaks.detect_breaks(df)
+            prev_year = str(int(year) - 1)
+            df = _fetch_df(dataflow_id, country, prev_year, year, age_group)
+            detected_breaks = breaks.detect_breaks(df)
 
-    if df.empty:
-        return [
-            {
-                "_breaks": [],
-                "_break_warning": None,
-                "_missing_years": [],
-                "_no_data_reason": (
-                    f"No data available for {country} in {dataflow_id}."
-                ),
-            }
-        ]
-
-    missing = _detect_gaps(df, prev_year, year)
-    warning = _build_break_warning(detected_breaks, prev_year, year)
-    try:
-        stat = growth.yoy(df, year)
-    except ValueError as exc:
-        gap_info = f" Missing years in window: {missing}." if missing else ""
-        raise ValueError(
-            f"Cannot compute year-over-year change for {country}"
-            f" in {dataflow_id}: {exc}{gap_info}"
-        ) from exc
-    return [
-        {
-            "_breaks": detected_breaks,
-            "_break_warning": warning,
-            "_missing_years": missing,
-            "_no_data_reason": None,
-        },
-        stat,
-    ]
+            if df.empty:
+                result: list[dict[str, object]] = [
+                    {
+                        "_breaks": [],
+                        "_break_warning": None,
+                        "_missing_years": [],
+                        "_no_data_reason": (
+                            f"No data available for {country} in {dataflow_id}."
+                        ),
+                    }
+                ]
+            else:
+                missing = _detect_gaps(df, prev_year, year)
+                warning = _build_break_warning(detected_breaks, prev_year, year)
+                try:
+                    stat = growth.yoy(df, year)
+                except ValueError as exc:
+                    gap_info = (
+                        f" Missing years in window: {missing}." if missing else ""
+                    )
+                    raise ValueError(
+                        f"Cannot compute year-over-year change for {country}"
+                        f" in {dataflow_id}: {exc}{gap_info}"
+                    ) from exc
+                result = [
+                    {
+                        "_breaks": detected_breaks,
+                        "_break_warning": warning,
+                        "_missing_years": missing,
+                        "_no_data_reason": None,
+                    },
+                    stat,
+                ]
+            outcome = (
+                "empty"
+                if len(result) == 1 and result[0].get("_no_data_reason")
+                else "success"
+            )
+            span.set_attribute("outcome", outcome)
+            logger.info(
+                "tool",
+                tool="get_yoy_change",
+                dataflow_id=dataflow_id,
+                country=country,
+                outcome=outcome,
+                duration_ms=int((time.perf_counter() - t0) * 1000),
+            )
+            return result
+        except (ValueError, RuntimeError) as exc:
+            span.set_attribute("outcome", "error")
+            span.set_attribute("error.message", str(exc))
+            logger.info(
+                "tool",
+                tool="get_yoy_change",
+                dataflow_id=dataflow_id,
+                country=country,
+                outcome="error",
+                duration_ms=int((time.perf_counter() - t0) * 1000),
+            )
+            raise
 
 
 @mcp.tool(
@@ -350,53 +498,90 @@ def get_cagr(
     end_year: str,
     age_group: str = "total",
 ) -> list[dict[str, object]]:
-    _validate_dataflow(dataflow_id)
-    _validate_age_group(age_group)
-    _validate_year("start_year", start_year, dataflow_id)
-    _validate_year("end_year", end_year, dataflow_id)
-    if start_year >= end_year:
-        raise ValueError(
-            f"start_year must be strictly before end_year"
-            f" (got {start_year!r} and {end_year!r})"
-        )
-    _validate_country(country)
+    t0 = time.perf_counter()
+    with _tracer.start_as_current_span("tool.get_cagr") as span:
+        span.set_attribute("dataflow_id", dataflow_id)
+        span.set_attribute("country", country)
+        span.set_attribute("start_year", start_year)
+        span.set_attribute("end_year", end_year)
+        span.set_attribute("age_group", age_group)
+        try:
+            _validate_dataflow(dataflow_id)
+            _validate_age_group(age_group)
+            _validate_year("start_year", start_year, dataflow_id)
+            _validate_year("end_year", end_year, dataflow_id)
+            if start_year >= end_year:
+                raise ValueError(
+                    f"start_year must be strictly before end_year"
+                    f" (got {start_year!r} and {end_year!r})"
+                )
+            _validate_country(country)
 
-    # Fetch one year before start_year so detect_breaks() can see a transition
-    # that occurs AT start_year (needs a prior row to compare sources).
-    detect_start = _detection_start(start_year, dataflow_id)
-    df = _fetch_df(dataflow_id, country, detect_start, end_year, age_group)
-    detected_breaks = breaks.detect_breaks(df)
+            # Fetch one year before start_year so detect_breaks() can see a
+            # transition that occurs AT start_year (needs a prior row to
+            # compare sources).
+            detect_start = _detection_start(start_year, dataflow_id)
+            df = _fetch_df(dataflow_id, country, detect_start, end_year, age_group)
+            detected_breaks = breaks.detect_breaks(df)
 
-    if df.empty:
-        return [
-            {
-                "_breaks": [],
-                "_break_warning": None,
-                "_missing_years": [],
-                "_no_data_reason": (
-                    f"No data available for {country} in {dataflow_id}."
-                ),
-            }
-        ]
-
-    missing = _detect_gaps(df, start_year, end_year)
-    warning = _build_break_warning(detected_breaks, start_year, end_year)
-    try:
-        stat = growth.cagr(df, start_year, end_year)
-    except ValueError as exc:
-        gap_info = f" Missing years in range: {missing}." if missing else ""
-        raise ValueError(
-            f"Cannot compute CAGR for {country} in {dataflow_id}: {exc}{gap_info}"
-        ) from exc
-    return [
-        {
-            "_breaks": detected_breaks,
-            "_break_warning": warning,
-            "_missing_years": missing,
-            "_no_data_reason": None,
-        },
-        stat,
-    ]
+            if df.empty:
+                result: list[dict[str, object]] = [
+                    {
+                        "_breaks": [],
+                        "_break_warning": None,
+                        "_missing_years": [],
+                        "_no_data_reason": (
+                            f"No data available for {country} in {dataflow_id}."
+                        ),
+                    }
+                ]
+            else:
+                missing = _detect_gaps(df, start_year, end_year)
+                warning = _build_break_warning(detected_breaks, start_year, end_year)
+                try:
+                    stat = growth.cagr(df, start_year, end_year)
+                except ValueError as exc:
+                    gap_info = f" Missing years in range: {missing}." if missing else ""
+                    raise ValueError(
+                        f"Cannot compute CAGR for {country} in"
+                        f" {dataflow_id}: {exc}{gap_info}"
+                    ) from exc
+                result = [
+                    {
+                        "_breaks": detected_breaks,
+                        "_break_warning": warning,
+                        "_missing_years": missing,
+                        "_no_data_reason": None,
+                    },
+                    stat,
+                ]
+            outcome = (
+                "empty"
+                if len(result) == 1 and result[0].get("_no_data_reason")
+                else "success"
+            )
+            span.set_attribute("outcome", outcome)
+            logger.info(
+                "tool",
+                tool="get_cagr",
+                dataflow_id=dataflow_id,
+                country=country,
+                outcome=outcome,
+                duration_ms=int((time.perf_counter() - t0) * 1000),
+            )
+            return result
+        except (ValueError, RuntimeError) as exc:
+            span.set_attribute("outcome", "error")
+            span.set_attribute("error.message", str(exc))
+            logger.info(
+                "tool",
+                tool="get_cagr",
+                dataflow_id=dataflow_id,
+                country=country,
+                outcome="error",
+                duration_ms=int((time.perf_counter() - t0) * 1000),
+            )
+            raise
 
 
 @mcp.tool(
@@ -422,53 +607,90 @@ def get_trend(
     end_year: str,
     age_group: str = "total",
 ) -> list[dict[str, object]]:
-    _validate_dataflow(dataflow_id)
-    _validate_age_group(age_group)
-    _validate_year("start_year", start_year, dataflow_id)
-    _validate_year("end_year", end_year, dataflow_id)
-    if start_year >= end_year:
-        raise ValueError(
-            f"start_year must be strictly before end_year"
-            f" (got {start_year!r} and {end_year!r})"
-        )
-    _validate_country(country)
+    t0 = time.perf_counter()
+    with _tracer.start_as_current_span("tool.get_trend") as span:
+        span.set_attribute("dataflow_id", dataflow_id)
+        span.set_attribute("country", country)
+        span.set_attribute("start_year", start_year)
+        span.set_attribute("end_year", end_year)
+        span.set_attribute("age_group", age_group)
+        try:
+            _validate_dataflow(dataflow_id)
+            _validate_age_group(age_group)
+            _validate_year("start_year", start_year, dataflow_id)
+            _validate_year("end_year", end_year, dataflow_id)
+            if start_year >= end_year:
+                raise ValueError(
+                    f"start_year must be strictly before end_year"
+                    f" (got {start_year!r} and {end_year!r})"
+                )
+            _validate_country(country)
 
-    # Fetch one year before start_year so detect_breaks() can see a transition
-    # that occurs AT start_year (needs a prior row to compare sources).
-    detect_start = _detection_start(start_year, dataflow_id)
-    df = _fetch_df(dataflow_id, country, detect_start, end_year, age_group)
-    detected_breaks = breaks.detect_breaks(df)
+            # Fetch one year before start_year so detect_breaks() can see a
+            # transition that occurs AT start_year (needs a prior row to
+            # compare sources).
+            detect_start = _detection_start(start_year, dataflow_id)
+            df = _fetch_df(dataflow_id, country, detect_start, end_year, age_group)
+            detected_breaks = breaks.detect_breaks(df)
 
-    if df.empty:
-        return [
-            {
-                "_breaks": [],
-                "_break_warning": None,
-                "_missing_years": [],
-                "_no_data_reason": (
-                    f"No data available for {country} in {dataflow_id}."
-                ),
-            }
-        ]
-
-    missing = _detect_gaps(df, start_year, end_year)
-    warning = _build_break_warning(detected_breaks, start_year, end_year)
-    try:
-        stat = growth.trend(df, start_year, end_year)
-    except ValueError as exc:
-        gap_info = f" Missing years in range: {missing}." if missing else ""
-        raise ValueError(
-            f"Cannot compute trend for {country} in {dataflow_id}: {exc}{gap_info}"
-        ) from exc
-    return [
-        {
-            "_breaks": detected_breaks,
-            "_break_warning": warning,
-            "_missing_years": missing,
-            "_no_data_reason": None,
-        },
-        stat,
-    ]
+            if df.empty:
+                result: list[dict[str, object]] = [
+                    {
+                        "_breaks": [],
+                        "_break_warning": None,
+                        "_missing_years": [],
+                        "_no_data_reason": (
+                            f"No data available for {country} in {dataflow_id}."
+                        ),
+                    }
+                ]
+            else:
+                missing = _detect_gaps(df, start_year, end_year)
+                warning = _build_break_warning(detected_breaks, start_year, end_year)
+                try:
+                    stat = growth.trend(df, start_year, end_year)
+                except ValueError as exc:
+                    gap_info = f" Missing years in range: {missing}." if missing else ""
+                    raise ValueError(
+                        f"Cannot compute trend for {country} in"
+                        f" {dataflow_id}: {exc}{gap_info}"
+                    ) from exc
+                result = [
+                    {
+                        "_breaks": detected_breaks,
+                        "_break_warning": warning,
+                        "_missing_years": missing,
+                        "_no_data_reason": None,
+                    },
+                    stat,
+                ]
+            outcome = (
+                "empty"
+                if len(result) == 1 and result[0].get("_no_data_reason")
+                else "success"
+            )
+            span.set_attribute("outcome", outcome)
+            logger.info(
+                "tool",
+                tool="get_trend",
+                dataflow_id=dataflow_id,
+                country=country,
+                outcome=outcome,
+                duration_ms=int((time.perf_counter() - t0) * 1000),
+            )
+            return result
+        except (ValueError, RuntimeError) as exc:
+            span.set_attribute("outcome", "error")
+            span.set_attribute("error.message", str(exc))
+            logger.info(
+                "tool",
+                tool="get_trend",
+                dataflow_id=dataflow_id,
+                country=country,
+                outcome="error",
+                duration_ms=int((time.perf_counter() - t0) * 1000),
+            )
+            raise
 
 
 # ── Prompts ───────────────────────────────────────────────────────────────────
@@ -533,51 +755,78 @@ def labor_market_snapshot(countries: str) -> str:
 
     Raises ValueError for >3 countries, unknown names, or ambiguous names.
     """
-    inputs = [c.strip() for c in countries.split(",") if c.strip()]
-    n = len(inputs)
-    if n == 0:
-        raise ValueError(
-            "countries must not be empty."
-            " Provide 1-3 country names or ISO-3 codes, comma-separated."
-        )
-    if n > 3:
-        raise ValueError(
-            f"labor_market_snapshot accepts 1-3 countries, got {n}: {inputs}."
-        )
-
-    country_list = resources.get_cached_countries()
-    errors: list[ValueError] = []
-    resolved: list[str] = []
-
-    for inp in inputs:
+    t0 = time.perf_counter()
+    with _tracer.start_as_current_span("prompt.labor_market_snapshot") as span:
+        span.set_attribute("countries", countries)
         try:
-            code = _resolve_country(inp, country_list)
-            resolved.append(code)
-        except ValueError as e:
-            errors.append(e)
+            inputs = [c.strip() for c in countries.split(",") if c.strip()]
+            n = len(inputs)
+            if n == 0:
+                raise ValueError(
+                    "countries must not be empty."
+                    " Provide 1-3 country names or ISO-3 codes, comma-separated."
+                )
+            if n > 3:
+                raise ValueError(
+                    f"labor_market_snapshot accepts 1-3 countries, got {n}: {inputs}."
+                )
 
-    if errors:
-        raise errors[0]
+            country_list = resources.get_cached_countries()
+            errors: list[ValueError] = []
+            resolved: list[str] = []
 
-    codes_str = ", ".join(resolved)
-    flows_str = "\n".join(
-        f"  - {f['theme']}: {f['dataflow_id']}" for f in resources.CANONICAL_FLOWS
-    )
+            for inp in inputs:
+                try:
+                    code = _resolve_country(inp, country_list)
+                    resolved.append(code)
+                except ValueError as e:
+                    errors.append(e)
 
-    return (
-        f"Fetch a labour market snapshot for: {codes_str}.\n\n"
-        f"For each country, call get_time_series with the following dataflow IDs"
-        f" (use the most recent 2 years available):\n{flows_str}\n\n"
-        f"For each dataflow and country:\n"
-        f"1. Retrieve the data with get_time_series.\n"
-        f"2. Compute year-over-year change for the most recent year"
-        f" using get_yoy_change.\n"
-        f"3. Note any methodology breaks in the _breaks field.\n\n"
-        f"Present the results as a concise table comparing all countries."
-        f" Use ISO codes ({codes_str}) as column headers."
-        f" If data is unavailable for a country/indicator, show 'N/A'."
-    )
+            if errors:
+                raise errors[0]
+
+            codes_str = ", ".join(resolved)
+            flows_str = "\n".join(
+                f"  - {f['theme']}: {f['dataflow_id']}"
+                for f in resources.CANONICAL_FLOWS
+            )
+
+            result = (
+                f"Fetch a labour market snapshot for: {codes_str}.\n\n"
+                f"For each country, call get_time_series with the following"
+                f" dataflow IDs"
+                f" (use the most recent 2 years available):\n{flows_str}\n\n"
+                f"For each dataflow and country:\n"
+                f"1. Retrieve the data with get_time_series.\n"
+                f"2. Compute year-over-year change for the most recent year"
+                f" using get_yoy_change.\n"
+                f"3. Note any methodology breaks in the _breaks field.\n\n"
+                f"Present the results as a concise table comparing all countries."
+                f" Use ISO codes ({codes_str}) as column headers."
+                f" If data is unavailable for a country/indicator, show 'N/A'."
+            )
+            span.set_attribute("outcome", "success")
+            logger.info(
+                "prompt",
+                tool="labor_market_snapshot",
+                countries=countries,
+                outcome="success",
+                duration_ms=int((time.perf_counter() - t0) * 1000),
+            )
+            return result
+        except (ValueError, RuntimeError) as exc:
+            span.set_attribute("outcome", "error")
+            span.set_attribute("error.message", str(exc))
+            logger.info(
+                "prompt",
+                tool="labor_market_snapshot",
+                countries=countries,
+                outcome="error",
+                duration_ms=int((time.perf_counter() - t0) * 1000),
+            )
+            raise
 
 
 def main() -> None:
+    telemetry.configure()
     mcp.run()

@@ -3,10 +3,43 @@
 ---
 
 ## TODO — start of next session
-- **Phase 4.5: Observability** — add `structlog` INFO-level logging to all 7 tools
-  (tool, inputs, outcome, duration_ms). OpenTelemetry spans for tool calls and API calls.
-  Honeycomb backend. Phase 5 benchmark follows.
 - **Phase 5: Hallucination benchmark** — `run_benchmark.py`, scoring, Kanza fills ground truth.
+- **Manual verification (Phase 4.5)** — confirm Honeycomb silence when unreachable: run with
+  `HONEYCOMB_API_KEY` set but network blocked; MCP must respond normally.
+
+---
+
+## 2026-09-02 (session 3) — Phase 4.5 Observability complete
+
+structlog + OpenTelemetry instrumentation implemented across server.py, sdmx_client.py,
+and new telemetry.py. 12 new tests. 129/129 passing. ruff + mypy clean.
+
+- `telemetry.py`: `configure()` sets up structlog (JSON output) and OTel TracerProvider
+  with Honeycomb exporter when `HONEYCOMB_API_KEY` is set; silent no-op when key absent
+- All 7 tools + `labor_market_snapshot` prompt: OTel span + `logger.info("tool", ...)`
+  with `outcome` (`"success"` / `"empty"` / `"error"`) and `duration_ms` on every exit path
+- All 4 ILOSTAT API call sites in `sdmx_client.py`: OTel span + `logger.debug("api", ...)`
+  with `http_status` and `duration_ms`; stdlib `logging` replaced by structlog throughout
+- `python-dotenv` loads `.env` at startup so `HONEYCOMB_API_KEY` is available without
+  manual export
+
+Plan: `local-notes/plan/phase04/phase4.5_observability_plan.md`
+QA report: `local-notes/execution/phase04.5/phase4.5_observability_qa_output.md`
+
+---
+
+## 2026-09-02 (session 2) — Git history cleanup
+
+`Co-Authored-By: Claude` was present in the initial commit (`493aa19`) from Phase 0,
+added by the harness before the no-attribution rule was established. Stripped from all
+commits using `git filter-repo --message-callback`. Force-pushed to both private (origin)
+and public repos. Public contributor list will refresh within a few hours — GitHub caches
+this aggressively.
+
+Also fixed the public repo default branch: was `publish` (stale Phase 0, 3 commits),
+now correctly `main` (all code). Root cause from previous session: `git push public publish`
+(missing `:main` mapping) created a stale `publish` branch on the public remote.
+Deleted it; `publish` branch upstream tracking unset locally to prevent recurrence.
 
 ---
 
