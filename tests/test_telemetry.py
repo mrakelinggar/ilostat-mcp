@@ -206,7 +206,7 @@ def test_tool_outcome_empty_logged_when_sdmx_returns_no_data():
 
     with (
         patch(
-            "ilostat_mcp.server.resources.get_cached_countries",
+            "ilostat_mcp.resources.get_cached_countries",
             return_value=_FAKE_COUNTRIES,
         ),
         patch(
@@ -260,7 +260,7 @@ def test_tool_outcome_success_logged_when_data_returned():
 
     with (
         patch(
-            "ilostat_mcp.server.resources.get_cached_countries",
+            "ilostat_mcp.resources.get_cached_countries",
             return_value=_FAKE_COUNTRIES,
         ),
         patch(
