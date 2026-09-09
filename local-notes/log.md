@@ -2,6 +2,38 @@
 
 ---
 
+## 2026-09-09 — Claude Desktop + Honeycomb setup
+
+Wired the MCP server into Claude Desktop and confirmed traces flowing to Honeycomb.
+
+**What was done:**
+- Added `ilostat` entry to `~/Library/Application Support/Claude/claude_desktop_config.json`
+- First attempt used `.venv/bin/ilostat-mcp` directly — failed with
+  `PermissionError: Operation not permitted: .venv/pyvenv.cfg`. macOS sandboxes
+  Claude Desktop so it can't read the venv config file via Python's site module.
+- Fixed by switching to `uv --directory ... run ilostat-mcp` — uv sets up the
+  environment before Python starts, bypassing the sandboxed read.
+- `HONEYCOMB_API_KEY` passed inline in the config `env:` block (not via `.env`)
+  because Claude Desktop doesn't inherit shell environment.
+- Confirmed tools work end-to-end in Claude Desktop.
+- Confirmed traces visible in Honeycomb under `ilostat-mcp` service — tool spans
+  nesting API spans with timing on each.
+- 2 error spans on every cold start (expected): `_validate_country` hits the
+  ILOSTAT API for CL_AREA on first call; if Claude Desktop's MCP handshake times
+  out before the response arrives, an error span is recorded. Harmless — cache
+  warms and subsequent calls succeed.
+
+**Also done:**
+- Fixed CI failures: `ruff format --check` was not run during Phase 4.6
+  implementation (only `ruff check`). Formatter reformatted 3 files —
+  `validation.py`, `test_sdmx_client.py`, `test_telemetry.py`. Committed
+  `2da9853`, pushed to both repos.
+- Pushed Phase 4.6 + format fix to public repo (`publish` branch → `public/main`).
+- Prepared Kanza's setup instructions: `uvx --from git+https://github.com/...`
+  config entry; install uv via one curl command; no other dependencies.
+
+---
+
 ## 2026-09-09 — Phase 4.6: Modular architecture refactor
 
 server.py split from 832 LOC (MI 22.3, CC max 10) into focused single-responsibility
