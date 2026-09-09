@@ -45,6 +45,24 @@ def get_cached_countries() -> list[dict[str, str]]:
     return _countries_cache
 
 
+# ── Resource handler functions (registered in server.py) ─────────────────────
+
+
+def get_system_prompt() -> str:
+    """Return the ILOSTAT MCP system prompt."""
+    return SYSTEM_PROMPT
+
+
+def get_codelist_area() -> list[dict[str, str]]:
+    """All valid ILOSTAT country/area codes from CL_AREA."""
+    return get_cached_countries()
+
+
+def get_codelist_indicator() -> list[dict[str, str]]:
+    """The four canonical v1 dataflows — theme, dataflow_id, title."""
+    return CANONICAL_FLOWS
+
+
 SYSTEM_PROMPT = """\
 You have access to ILOSTAT — the ILO's official labour statistics database.
 It holds country-level employment and wage data sourced from national surveys.
