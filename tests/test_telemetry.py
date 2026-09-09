@@ -240,9 +240,7 @@ def test_tool_outcome_error_logged_on_invalid_flow_id():
         structlog.testing.capture_logs() as log_entries,
         pytest.raises(ValueError, match="Unknown dataflow"),
     ):
-        server_get_time_series(
-            "DF_INVALID_FLOW_9999", _VALID_COUNTRY, "2020", "2022"
-        )
+        server_get_time_series("DF_INVALID_FLOW_9999", _VALID_COUNTRY, "2020", "2022")
 
     tool_logs = [e for e in log_entries if e.get("event") == "tool"]
     assert len(tool_logs) == 1, f"Expected 1 tool log entry, got: {tool_logs}"

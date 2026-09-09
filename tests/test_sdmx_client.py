@@ -57,9 +57,9 @@ class TestGetTimeSeries:
         df = get_time_series(UNE_FLOW, "DEU", "2015", "2023", freq="A", age=AGE_TOTAL)
         # freq column is no longer returned, but the filter still runs —
         # verify by confirming every time_period is a 4-digit year string.
-        assert all(
-            tp.isdigit() and len(tp) == 4 for tp in df["time_period"]
-        ), "Non-annual time_period leaked through annual filter"
+        assert all(tp.isdigit() and len(tp) == 4 for tp in df["time_period"]), (
+            "Non-annual time_period leaked through annual filter"
+        )
 
     def test_value_column_is_numeric(self):
         """Values should be numeric (float), not strings."""

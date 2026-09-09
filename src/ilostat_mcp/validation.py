@@ -23,9 +23,7 @@ def _validate_dataflow(dataflow_id: str) -> None:
     """Raise ValueError if dataflow_id is not in the registered allowlist."""
     if dataflow_id not in FLOW_DIMS:
         valid = ", ".join(sorted(FLOW_DIMS.keys()))
-        raise ValueError(
-            f"Unknown dataflow {dataflow_id!r}. Valid dataflows: {valid}"
-        )
+        raise ValueError(f"Unknown dataflow {dataflow_id!r}. Valid dataflows: {valid}")
 
 
 def _validate_age_group(age_group: str) -> None:
