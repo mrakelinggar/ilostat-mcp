@@ -2,6 +2,35 @@
 
 ---
 
+## 2026-09-09 — Phase 4.6: Modular architecture refactor
+
+server.py split from 832 LOC (MI 22.3, CC max 10) into focused single-responsibility
+modules. server.py is now 61 LOC (MI 100, CC max 1) — pure registration code only.
+
+**What was done:**
+- `validation.py` — moved _validate_dataflow/age_group/year/country + constants
+- `tools/lookup.py` — search_indicators, get_countries, get_indicator_metadata
+- `tools/time_series.py` — get_time_series + _fetch_df/_detect_gaps/_detection_start
+- `tools/derived.py` — get_yoy_change, get_cagr, get_trend, _build_break_warning
+- `tools/snapshot.py` — labor_market_snapshot + _resolve_country
+- `resources.py` — added 3 handler functions for resource registrations
+- `server.py` — stripped to imports + mcp.tool/resource/prompt calls + main()
+
+**Key finding:** `mcp.tool()` is an identity decorator — registers and returns the same
+function object. Importing tool functions into server.py's namespace is sufficient
+for both FastMCP registration and test compatibility. No test signature changes.
+
+**One test fix:** Two patch targets in test_telemetry.py changed from
+`ilostat_mcp.server.resources.get_cached_countries` (dead — server.py no longer imports
+the `resources` module) to `ilostat_mcp.resources.get_cached_countries` (where the
+function actually lives and is looked up from validation.py).
+
+129/129 tests. ruff + mypy clean. Committed `1ad04ed`.
+
+**Next:** Phase 5 — Benchmark.
+
+---
+
 ## TODO — start of next session
 - **Phase 5: Hallucination benchmark** — `run_benchmark.py`, scoring, Kanza fills ground truth.
 - **Manual verification (Phase 4.5)** — confirm Honeycomb silence when unreachable: run with
