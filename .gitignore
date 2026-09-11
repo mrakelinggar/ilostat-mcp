@@ -1,6 +1,3 @@
-CLAUDE.md
-local-notes/
-.claude/
 __pycache__/
 *.pyc
 *.pyo
@@ -11,3 +8,5 @@ dist/
 .DS_Store
 .env
 .env.*
+.mcp.json
+.claude/
