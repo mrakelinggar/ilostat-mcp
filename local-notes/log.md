@@ -2,6 +2,32 @@
 
 ---
 
+## 2026-09-12 — README, MIT license, Honeycomb MCP, local-notes reorganisation
+
+**Kanza's missing traces — root cause:**
+Kanza's test queries last night produced no Honeycomb traces. Cause: `HONEYCOMB_API_KEY` was not set in her Claude Desktop subprocess environment. The MCP server's `_configure_otel()` silently skips creating the OTel exporter when the key is absent — no error, no warning, all spans quietly discarded. Fix: add `HONEYCOMB_API_KEY` to the `env` block in her `claude_desktop_config.json` alongside the other config she already has.
+
+**Honeycomb MCP added to project:**
+Added `@honeycombio/honeycomb-mcp` as a project-scoped MCP server so we can query Honeycomb from inside Claude Code. Config in `.mcp.json` at the project root (API key inline, so this file is gitignored on both repos). Disabled by default via `.claude/settings.json` — to enable for a session, remove `"honeycomb"` from `disabledMcpjsonServers` and restart Claude Code. Both files gitignored; `.claude/` was already excluded from the public repo but now explicitly excluded from the private repo too.
+
+**README rewritten:**
+Old README was a placeholder. New one is public-facing: two install options (`uvx --from git+https://...` for zero-install, `git clone + pip install .` for a persistent install), the full tool table, methodology-break detection explanation with a real warning example, a benchmark stub linking to `benchmark/`, and development commands. Key fix: the original draft just said `uvx ilostat-mcp` with no git URL — that only works once the package is on PyPI (not yet). Clarified that the correct zero-install command fetches directly from GitHub.
+
+**MIT license:**
+Created `LICENSE` (MIT, copyright Rake Anggoro 2026). Chosen because MIT is maximally permissive — anyone can use, modify, and distribute the code freely, including commercially, which matches the intent of making this an open tool.
+
+**Data category discussion — next release:**
+Confirmed that `1 − employment rate ≠ unemployment rate` — the gap is inactive people (outside the labour force entirely). Unemployment as a standalone concept is part of the **labour underutilisation** framework, which also covers time-related underemployment (LU1), unemployment at the ILO standard (LU2), and the potential labour force / discouraged workers (LU3). LU4 combines all three. Adding labour underutilisation for v0.2.0 therefore gives us unemployment (LU2) as part of a richer framework, not as a separate release.
+
+**local-notes reorganised:**
+Moved all existing phase work (docs, plan, execution phases 0–4.6) into `release-0.1.0/`. Created empty `release-0.2.0/execution/` and `release-0.2.0/plan/` placeholders for labour underutilisation work. `learnings/` and `log.md` stay at the top level — they're cross-release. Committed to private repo only.
+
+**Commits and pushes:**
+- `700cbc8` — `docs: README and LICENSE (MIT)` → pushed to both private and public repos
+- `ffb93e4` — `chore: reorganise local-notes by release version` → pushed to private repo only (local-notes never goes public)
+
+---
+
 ## 2026-09-09 — Claude Desktop + Honeycomb setup
 
 Wired the MCP server into Claude Desktop and confirmed traces flowing to Honeycomb.
