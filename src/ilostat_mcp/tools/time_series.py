@@ -75,6 +75,14 @@ def _fetch_df(
 # ── Tool handler ──────────────────────────────────────────────────────────────
 
 
+def _extract_unit(df: pd.DataFrame) -> str | None:
+    """Return the unit_measure from the first non-null row, or None."""
+    if "unit_measure" not in df.columns:
+        return None
+    col = df["unit_measure"].dropna()
+    return str(col.iloc[0]) if not col.empty else None
+
+
 def get_time_series(
     dataflow_id: str,
     country: str,
@@ -84,17 +92,27 @@ def get_time_series(
 ) -> list[dict[str, object]]:
     """
     Fetch a time series from ILOSTAT. Returns a list where the FIRST element
-    is series metadata: {_breaks, _missing_years, _no_data_reason}.
-    _breaks lists methodology breaks (each: {year, source_before, source_after};
-    empty if none). _missing_years lists years in the requested range with no
-    observation (gaps in ILOSTAT's data, not errors). _no_data_reason is set
-    when the country has no data at all in this dataflow.
-    Remaining elements are annual observations: time_period, value, obs_status,
-    source, unit_measure.
+    is series metadata and remaining elements are annual observations.
+
+    Metadata keys:
+      _dataflow_id     : the dataflow this data came from
+      _is_modelled     : true if the flow is ILO modelled estimates, not survey data
+      _unit_measure    : unit of the values (e.g. "%", "USD", "EUR/month")
+      _coverage_start  : earliest year available for this country in the response
+      _coverage_end    : latest year available — may be earlier than end_year if
+                         ILOSTAT has not yet published data for recent years
+      _breaks          : methodology breaks ({year, source_before, source_after});
+                         empty if none
+      _missing_years   : years in the requested range with no observation (gaps)
+      _no_data_reason  : plain-English explanation when the country has no data
+
+    Observation keys: time_period, value, obs_status, source, unit_measure.
     Do not compute multi-year trends across a break without flagging it.
     age_group: 'total' (default, adults 15+) or 'youth' (15-29); ignored
     for wage flows.
     """
+    from ilostat_mcp.indicators import is_modelled
+
     t0 = time.perf_counter()
     with _tracer.start_as_current_span("tool.get_time_series") as span:
         span.set_attribute("dataflow_id", dataflow_id)
@@ -117,6 +135,11 @@ def get_time_series(
             if df.empty:
                 result: list[dict[str, object]] = [
                     {
+                        "_dataflow_id": dataflow_id,
+                        "_is_modelled": is_modelled(dataflow_id),
+                        "_unit_measure": None,
+                        "_coverage_start": None,
+                        "_coverage_end": None,
                         "_breaks": detected_breaks,
                         "_missing_years": [],
                         "_no_data_reason": (
@@ -128,6 +151,11 @@ def get_time_series(
                 missing = _detect_gaps(df, start_year, end_year)
                 rows = cast(list[dict[str, object]], df.to_dict(orient="records"))
                 meta: dict[str, object] = {
+                    "_dataflow_id": dataflow_id,
+                    "_is_modelled": is_modelled(dataflow_id),
+                    "_unit_measure": _extract_unit(df),
+                    "_coverage_start": str(df["time_period"].min()),
+                    "_coverage_end": str(df["time_period"].max()),
                     "_breaks": detected_breaks,
                     "_missing_years": missing,
                     "_no_data_reason": None,
