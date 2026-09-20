@@ -6,7 +6,13 @@ import structlog
 
 from ilostat_mcp import breaks, telemetry
 from ilostat_mcp.analysis import growth
-from ilostat_mcp.tools.time_series import _detect_gaps, _detection_start, _fetch_df
+from ilostat_mcp.indicators import is_modelled
+from ilostat_mcp.tools.time_series import (
+    _detect_gaps,
+    _detection_start,
+    _extract_unit,
+    _fetch_df,
+)
 from ilostat_mcp.validation import (
     _validate_age_group,
     _validate_country,
@@ -57,7 +63,8 @@ def get_yoy_change(
     Year-over-year percentage change for a single year.
     Compares the value at `year` to `year - 1`.
     Returns a list where result[0] is metadata:
-    {_breaks, _break_warning, _missing_years, _no_data_reason}
+    {_dataflow_id, _is_modelled, _unit_measure, _coverage_start, _coverage_end,
+     _breaks, _break_warning, _missing_years, _no_data_reason}
     and result[1] is {year, value, prev_year, prev_value, change_pct}.
     _missing_years lists years in the fetch window with no observation.
     _no_data_reason is set (and result has only 1 element) when the country
@@ -83,6 +90,11 @@ def get_yoy_change(
             if df.empty:
                 result: list[dict[str, object]] = [
                     {
+                        "_dataflow_id": dataflow_id,
+                        "_is_modelled": is_modelled(dataflow_id),
+                        "_unit_measure": None,
+                        "_coverage_start": None,
+                        "_coverage_end": None,
                         "_breaks": [],
                         "_break_warning": None,
                         "_missing_years": [],
@@ -106,6 +118,11 @@ def get_yoy_change(
                     ) from exc
                 result = [
                     {
+                        "_dataflow_id": dataflow_id,
+                        "_is_modelled": is_modelled(dataflow_id),
+                        "_unit_measure": _extract_unit(df),
+                        "_coverage_start": str(df["time_period"].min()),
+                        "_coverage_end": str(df["time_period"].max()),
                         "_breaks": detected_breaks,
                         "_break_warning": warning,
                         "_missing_years": missing,
@@ -152,7 +169,8 @@ def get_cagr(
     """
     Compound annual growth rate (CAGR) between start_year and end_year.
     Returns a list where result[0] is metadata:
-    {_breaks, _break_warning, _missing_years, _no_data_reason}
+    {_dataflow_id, _is_modelled, _unit_measure, _coverage_start, _coverage_end,
+     _breaks, _break_warning, _missing_years, _no_data_reason}
     and result[1] is
     {start_year, end_year, start_value, end_value, cagr_pct, n_years}.
     A _break_warning is set if any methodology break falls within the range
@@ -192,6 +210,11 @@ def get_cagr(
             if df.empty:
                 result: list[dict[str, object]] = [
                     {
+                        "_dataflow_id": dataflow_id,
+                        "_is_modelled": is_modelled(dataflow_id),
+                        "_unit_measure": None,
+                        "_coverage_start": None,
+                        "_coverage_end": None,
                         "_breaks": [],
                         "_break_warning": None,
                         "_missing_years": [],
@@ -213,6 +236,11 @@ def get_cagr(
                     ) from exc
                 result = [
                     {
+                        "_dataflow_id": dataflow_id,
+                        "_is_modelled": is_modelled(dataflow_id),
+                        "_unit_measure": _extract_unit(df),
+                        "_coverage_start": str(df["time_period"].min()),
+                        "_coverage_end": str(df["time_period"].max()),
                         "_breaks": detected_breaks,
                         "_break_warning": warning,
                         "_missing_years": missing,
@@ -259,7 +287,8 @@ def get_trend(
     """
     OLS linear trend between start_year and end_year.
     Returns a list where result[0] is metadata:
-    {_breaks, _break_warning, _missing_years, _no_data_reason}
+    {_dataflow_id, _is_modelled, _unit_measure, _coverage_start, _coverage_end,
+     _breaks, _break_warning, _missing_years, _no_data_reason}
     and result[1] is
     {start_year, end_year, slope, intercept, r_squared, n_points}.
     A _break_warning is set if any methodology break falls within the range
@@ -299,6 +328,11 @@ def get_trend(
             if df.empty:
                 result: list[dict[str, object]] = [
                     {
+                        "_dataflow_id": dataflow_id,
+                        "_is_modelled": is_modelled(dataflow_id),
+                        "_unit_measure": None,
+                        "_coverage_start": None,
+                        "_coverage_end": None,
                         "_breaks": [],
                         "_break_warning": None,
                         "_missing_years": [],
@@ -320,6 +354,11 @@ def get_trend(
                     ) from exc
                 result = [
                     {
+                        "_dataflow_id": dataflow_id,
+                        "_is_modelled": is_modelled(dataflow_id),
+                        "_unit_measure": _extract_unit(df),
+                        "_coverage_start": str(df["time_period"].min()),
+                        "_coverage_end": str(df["time_period"].max()),
                         "_breaks": detected_breaks,
                         "_break_warning": warning,
                         "_missing_years": missing,
