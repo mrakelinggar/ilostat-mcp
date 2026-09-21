@@ -133,6 +133,13 @@ def get_time_series(
             df = _fetch_df(dataflow_id, country, start_year, end_year, age_group)
             detected_breaks: list[dict[str, object]] = breaks.detect_breaks(df)
             if df.empty:
+                no_data_reason = f"No data available for {country} in {dataflow_id}."
+                if age_group == "youth":
+                    no_data_reason += (
+                        " This flow may not have youth age codes for this country."
+                        " Use search_indicators('youth unemployment') to find a"
+                        " youth-specific dataflow."
+                    )
                 result: list[dict[str, object]] = [
                     {
                         "_dataflow_id": dataflow_id,
@@ -142,9 +149,7 @@ def get_time_series(
                         "_coverage_end": None,
                         "_breaks": detected_breaks,
                         "_missing_years": [],
-                        "_no_data_reason": (
-                            f"No data available for {country} in {dataflow_id}."
-                        ),
+                        "_no_data_reason": no_data_reason,
                     }
                 ]
             else:

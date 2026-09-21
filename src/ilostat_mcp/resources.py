@@ -108,4 +108,9 @@ a metadata object as its first element. Always check these fields before answeri
   When comparing wages across countries in LCU, always state each country's currency.
 - In time-series results, obs_status "B" means a methodology break at that point.
   Do not state a multi-year trend that spans a break without flagging it.
+- For youth unemployment queries, age_group='youth' works only when the chosen flow
+  has youth age codes (AGE_YTHBANDS_Y15-29). The standard unemployment flow
+  (DF_UNE_DEAP_SEX_AGE_RT) does not have youth breakdowns for all countries. If a
+  youth query returns no data, use search_indicators('youth unemployment') to find a
+  youth-specific dataflow such as DF_UNE_3EAP_SEX_AGE_GEO_RT.
 """
