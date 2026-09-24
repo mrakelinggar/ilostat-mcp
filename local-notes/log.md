@@ -2,6 +2,98 @@
 
 ---
 
+## 2026-09-24 — Benchmark Round 2 reviewed; disclosure improvements applied
+
+**Kanza's Round 2 benchmark (PDF, 30 questions):**
+- Round 1: 19/30 match (63%), 7 partial, 2 no-match, 2 N/A
+- Round 2 re-run: ~25/30 match (83%), ~2 partial, 1 no-match, 2 N/A
+- Improvement was from tightening question wording (explicit currency, explicit base year), not connector fixes. Every reconciled discrepancy traced to a unit-of-measure or methodology-choice difference, not a computation error.
+
+**Spain 2022 (ILO-04/ILO-10) — still listed as unresolved in PDF:**
+The connector reproducibly returns 13.03% for Spain 2022. Kanza's manual figure is ~15%. This was investigated on 2026-09-21 and the connector was found correct (13.03% is ILOSTAT's `DF_UNE_DEAP_SEX_AGE_RT` value for 2022). The Sep 20 hypothesis ("likely a different ICLS standard") was never properly confirmed or ruled out — only age codes within the one flow were checked. To close this: Kanza needs to identify exactly which ILOSTAT Data Explorer selection gives her ~15% (the flow ID, not just the number).
+
+**New patterns identified from Round 2 analysis:**
+
+1. **Currency disclosure gap (Medium):** Connector defaults to LCU but `_unit_measure` returned the SDMX code ("CUR_TYPE_LCU"), not a human-readable currency. Agent couldn't name the actual currency without guessing. Fixed: added `_currency_code` field to all tool metadata — wage flows return the ISO 4217 code (THB, EUR, NGN, etc.) looked up from `COUNTRY_CURRENCY`.
+
+2. **"As of" not always stated (Medium):** `_coverage_end` existed in metadata but the system prompt only required stating it when shorter than requested. Fixed: system prompt now requires stating "data available through [year]" unconditionally.
+
+3. **ICLS standard mismatch — Nigeria (Medium):** Registered flows use 13th-ICLS. ILOSTAT's Data Explorer may default to 19th-ICLS for some countries, giving different figures. Fixed: system prompt now has an explicit note on this, so the agent can surface the explanation when results diverge from a manual check.
+
+4. **Base year ambiguity on growth questions (Low):** Agent wasn't always stating which years a CAGR or trend used. Fixed: system prompt now requires stating both endpoints — e.g. "4.2% CAGR from 2015 to 2022", not "4.2% CAGR".
+
+5. **South Africa youth silent substitution:** Already fixed 2026-09-21. PDF's mention of this reflects Round 1 behavior before the fix.
+
+6. **Germany +47% wage jump (ILO-22):** Connector flagged it as suspicious despite ILOSTAT's own metadata not marking it as a break. This is the break detection working better than the source data's own flags — a strength, not a defect.
+
+**Commits:**
+- `fix: surface ISO currency code in all tool metadata (_currency_code field)` — `time_series.py`, `derived.py`, `test_server.py`
+- `fix: system prompt — always state data freshness, ICLS note, base year rule` — `resources.py`
+
+131/131 tests passing. ruff + mypy clean.
+
+---
+
+## 2026-09-21 — Scope change: remote hosting added; Phase 5 open issues resolved
+
+**Scope change logged:**
+Distribution expanded from local-only to include a remote server hosted on Fly.io
+(free tier). Both transports supported: stdio (local, via uvx) and HTTP/SSE (remote).
+No OAuth for v1 — ILOSTAT is a public API. CLAUDE.md and ROADMAP updated.
+Phase 6 now has three sub-phases: 6a (Fly.io deployment), 6b (distribution), 6c (article).
+
+---
+
+## 2026-09-21 — Phase 5 open issues resolved
+
+**Spain 2022 discrepancy (root cause D) — closed, not a defect.**
+Investigated live: ILOSTAT returns 13.033% for Spain 2022 (AGE_YTHADULT_YGE15, EU
+Labour Force Survey). No age band gives ~15% for 2022. Kanza's figure was the 2021
+value (14.914%) or a different source. Connector is correct.
+
+**South Africa youth dataflow (root cause B) — fixed.**
+Root cause: DF_UNE_DEAP_SEX_AGE_RT has no AGE_YTHBANDS_Y15-29 for ZAF — returns 404
+→ empty, with a generic "no data" message. The agent had no signal to try the
+youth-specific flow (DF_UNE_3EAP_SEX_AGE_GEO_RT), which IS registered and returns the
+correct value (ZAF 2021 = 55.574%).
+
+Two fixes applied: (1) `_no_data_reason` now includes a search hint when age_group='youth'
+returns empty; (2) system prompt rule added for youth unemployment. 129/129 tests pass.
+
+Phase 5 is now complete except for benchmark_questions.json ground truth fill (Kanza's task).
+
+---
+
+## 2026-09-20 — Benchmark results reviewed, connector context improvements
+
+**Kanza's benchmark audit:**
+Kanza completed a manual ground-truth audit of 30 questions against ILOSTAT and compared the results against the connector. Results stored in `benchmark/ILO MCP Becnhmark Results 20260920.xlsx` (three sheets: Summary, Pencarian Manual, Komparasi Konektor).
+
+Raw match rate: 63.3% (19/30 exact). After root-cause reclassification: 76.7% trustworthy or explainably-divergent. True connector defects requiring fixes: 5/30 (16.7%).
+
+Root causes of the 9 non-exact cases:
+- A: Currency denomination (3 cases) — connector returns LCU, manual lookup used USD; not a defect, but needs proactive flagging
+- B: Dataflow/indicator not exposed (3 cases) — Nigeria (survey vs. modelled estimates), South Africa youth ×2; connector silently returns a different indicator
+- C: Data staleness (1 case) — Malaysia missing 2023–2025 in the connector's dataflow
+- D: Unresolved numeric discrepancy (1 case) — Spain 2022 (13.02% vs ~15%); still needs root-causing
+- E: Ambiguous prompt scope (1 case) — Brazil vs Argentina base year; not a connector defect
+
+**Connector fixes applied (commit `1663a1c`):**
+Added five fields to the metadata object returned by every data tool (get_time_series, get_yoy_change, get_cagr, get_trend):
+- `_dataflow_id` — which flow the data came from
+- `_is_modelled` — true if ILO modelled estimate, not survey data
+- `_unit_measure` — unit of the values (%, EUR, USD, etc.)
+- `_coverage_start` / `_coverage_end` — actual date range available in ILOSTAT for this country
+
+System prompt updated to instruct Claude to surface all of these in responses: always state units, flag modelled estimates, explain when coverage falls short of the requested period. Updated dataflow-selection guidance to prefer the most current ICLS standard when multiple flows match.
+
+**What still needs doing:**
+- Spain 2022 discrepancy (root cause D) not yet resolved — likely a different ICLS standard in the connector vs. Kanza's lookup, but not confirmed
+- benchmark_questions.json still has all ground truth as null — needs updating with Kanza's verified values
+- South Africa youth dataflow issue (root cause B) — `DF_UNE_3EAP_SEX_AGE_GEO_RT` registered but connector returning wrong data; needs investigation
+
+---
+
 ## 2026-09-12 — README, MIT license, Honeycomb MCP, local-notes reorganisation
 
 **Kanza's missing traces — root cause:**
