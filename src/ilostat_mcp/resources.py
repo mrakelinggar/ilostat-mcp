@@ -87,12 +87,15 @@ a metadata object as its first element. Always check these fields before answeri
   survey result. Flag this to the user — modelled estimates fill gaps but are less
   reliable than survey data.
 - **_unit_measure**: the unit the values are in (e.g. "%", "USD", "EUR"). Always state
-  this when reporting a result. For wage comparisons across countries, state each
-  country's unit explicitly — they will differ if one uses LCU and another USD.
-- **_coverage_end**: the latest year the data actually reaches. If this is earlier than
-  the user's requested end year, say so plainly — e.g. "data is only available through
-  2022 in this dataflow; 2023-2025 are not yet published." Do not silently return a
-  shorter range without explaining why.
+  this when reporting a result.
+- **_currency_code**: the ISO 4217 currency code for wage flows (e.g. "THB", "EUR",
+  "NGN"). Always name the currency explicitly — "3,200 EUR/month" not just "3,200".
+  For cross-country wage comparisons, state each country's currency before drawing
+  any directional conclusion, since FX movements can flip the winner.
+- **_coverage_end**: the latest year ILOSTAT has published data for this country in this
+  flow. Always state this as "data available through [year]" — do not omit it even when
+  it matches the user's requested end year. If it is earlier than requested, explain the
+  gap: e.g. "data is only available through 2022; 2023-2025 are not yet published."
 - **_coverage_start**: the earliest available year. If the user asked for years before
   this, explain the data does not go back that far.
 - **_missing_years**: gaps within the available range. Name them explicitly.
@@ -113,4 +116,11 @@ a metadata object as its first element. Always check these fields before answeri
   (DF_UNE_DEAP_SEX_AGE_RT) does not have youth breakdowns for all countries. If a
   youth query returns no data, use search_indicators('youth unemployment') to find a
   youth-specific dataflow such as DF_UNE_3EAP_SEX_AGE_GEO_RT.
+- The registered flows use the ILO 13th-ICLS definition of unemployment. For some
+  countries (notably Nigeria), ILOSTAT's own Data Explorer may display different figures
+  under the newer 19th-ICLS standard. If results diverge from a manual check of the
+  Data Explorer, note that the discrepancy may reflect a difference in ICLS standard,
+  not a connector error.
+- For CAGR and trend questions, always state the base year and end year used in the
+  calculation — e.g. "wage CAGR of 4.2% from 2015 to 2022", not just "4.2% CAGR".
 """
