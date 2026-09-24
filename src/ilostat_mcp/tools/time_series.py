@@ -7,7 +7,12 @@ import pandas as pd
 import structlog
 
 from ilostat_mcp import breaks, sdmx_client, telemetry
-from ilostat_mcp.indicators import CUR_DEFAULT, FLOW_DIMS, FLOW_MIN_YEARS
+from ilostat_mcp.indicators import (
+    COUNTRY_CURRENCY,
+    CUR_DEFAULT,
+    FLOW_DIMS,
+    FLOW_MIN_YEARS,
+)
 from ilostat_mcp.validation import (
     _AGE_GROUP_MAP,
     _validate_age_group,
@@ -73,6 +78,18 @@ def _fetch_df(
 
 
 # ── Tool handler ──────────────────────────────────────────────────────────────
+
+
+def _currency_for(dataflow_id: str, country: str) -> str | None:
+    """Return the ISO 4217 currency code for LCU-denominated wage flows, or None.
+
+    Wage flows (dim == "cur") return values in local currency units. This maps
+    the country to its ISO code so the agent can name the currency explicitly
+    rather than reporting a bare number.
+    """
+    if FLOW_DIMS.get(dataflow_id, {}).get("dim") == "cur":
+        return COUNTRY_CURRENCY.get(country)
+    return None
 
 
 def _extract_unit(df: pd.DataFrame) -> str | None:
@@ -145,6 +162,7 @@ def get_time_series(
                         "_dataflow_id": dataflow_id,
                         "_is_modelled": is_modelled(dataflow_id),
                         "_unit_measure": None,
+                        "_currency_code": _currency_for(dataflow_id, country),
                         "_coverage_start": None,
                         "_coverage_end": None,
                         "_breaks": detected_breaks,
@@ -159,6 +177,7 @@ def get_time_series(
                     "_dataflow_id": dataflow_id,
                     "_is_modelled": is_modelled(dataflow_id),
                     "_unit_measure": _extract_unit(df),
+                    "_currency_code": _currency_for(dataflow_id, country),
                     "_coverage_start": str(df["time_period"].min()),
                     "_coverage_end": str(df["time_period"].max()),
                     "_breaks": detected_breaks,

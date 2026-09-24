@@ -102,6 +102,19 @@ class TestGetTimeSeries:
         assert all("unit_measure" in row for row in data_rows)
 
     @pytest.mark.timeout(30)
+    def test_wage_flow_metadata_has_currency_code(self):
+        # Wage flows must surface the ISO currency code so the agent can name it
+        result = get_time_series(_WAGE_FLOW, "FRA", "2021", "2021")
+        meta = result[0]
+        assert meta["_currency_code"] == "EUR"
+
+    @pytest.mark.timeout(30)
+    def test_unemployment_flow_has_no_currency_code(self):
+        # Non-wage flows should return None for _currency_code
+        result = get_time_series(_UNEMPLOYMENT_FLOW, "DEU", "2022", "2022")
+        assert result[0]["_currency_code"] is None
+
+    @pytest.mark.timeout(30)
     def test_youth_age_group_returns_different_values_than_total(self):
         # ZAF youth unemployment (GEO flow) — adult total AGE code absent, youth present
         total = get_time_series(_GEO_FLOW, "ZAF", "2022", "2022", age_group="total")
