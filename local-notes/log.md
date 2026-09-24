@@ -2,6 +2,30 @@
 
 ---
 
+## 2026-09-24 — ICLS standard investigation
+
+Investigated whether switching the canonical unemployment flow from 13th ICLS
+(`DF_UNE_DEAP_SEX_AGE_RT`) to 19th ICLS (`DF_UNE_5EAP_SEX_AGE_RT`) would fix
+the benchmark ILO-06 Nigeria discrepancy.
+
+**Finding: do not switch.** The 19th ICLS flow covers only 110 countries vs 254
+in the 13th ICLS flow. Switching would drop Malaysia, Thailand, Pakistan, South
+Africa, India, China, Egypt, Morocco, Turkey, Philippines — most of the benchmark.
+
+**Nigeria (NGA) IS in the 19th ICLS flow**, confirming that ILO-06's discrepancy
+is a real ICLS standard difference: the Data Explorer shows Nigeria's 19th ICLS
+figures; our connector returns 13th ICLS. This is a disclosure gap, not a connector
+error. The system prompt already has a note for this.
+
+**Spain 2022 (ILO-04/ILO-10):** confirmed not an ICLS issue. `DF_UNE_5EAP_SEX_AGE_RT`
+returns 13.033% for Spain 2022 — identical to our flow. Kanza's ~15% is Spain 2021
+(14.914%). She was one year off in the Data Explorer.
+
+No code changes. Decision: keep 13th ICLS flow for its coverage breadth; disclose
+the standard in responses when relevant.
+
+---
+
 ## 2026-09-24 — Benchmark Round 2 reviewed; disclosure improvements applied
 
 **Kanza's Round 2 benchmark (PDF, 30 questions):**
