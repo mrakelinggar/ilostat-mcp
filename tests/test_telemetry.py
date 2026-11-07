@@ -233,7 +233,7 @@ def test_tool_outcome_empty_logged_when_sdmx_returns_no_data():
 
 def test_tool_outcome_error_logged_on_invalid_flow_id():
     # Spec: outcome == "error" fires when validation fails; exception is re-raised.
-    # No API mock needed: _validate_dataflow raises ValueError before any network call.
+    # No API mock needed: validate_dataflow raises ValueError before any network call.
     from ilostat_mcp.server import get_time_series as server_get_time_series
 
     with (
@@ -303,7 +303,7 @@ def test_ilostat_api_span_emitted_with_name_and_attributes():
         patch.object(sdmx_client_mod.sdmx, "to_pandas", return_value=empty_df),
     ):
         sdmx_client_mod.get_time_series(
-            _VALID_FLOW, _VALID_COUNTRY, "2020", "2022", age=AGE_TOTAL
+            _VALID_FLOW, _VALID_COUNTRY, "2020", "2022", dims={"AGE": AGE_TOTAL}
         )
 
     spans = exporter.get_finished_spans()
@@ -321,3 +321,89 @@ def test_ilostat_api_span_emitted_with_name_and_attributes():
     assert attrs.get("country") == _VALID_COUNTRY, (
         f"country attribute missing or wrong: {attrs}"
     )
+
+
+# ── Test: logs never go to stdout ─────────────────────────────────────────────
+
+
+def test_logs_written_to_stderr_not_stdout(capsys: pytest.CaptureFixture[str]):
+    # On the stdio transport stdout carries the MCP protocol; the spec forbids
+    # writing anything else there, so log lines must go to stderr.
+    with patch.dict(os.environ, {"HONEYCOMB_API_KEY": ""}):
+        telemetry.configure()
+    structlog.get_logger().info("probe_event")
+    captured = capsys.readouterr()
+    assert captured.out == "", f"Log leaked to stdout: {captured.out!r}"
+    assert "probe_event" in captured.err
+
+
+# ── Test: tool spans ──────────────────────────────────────────────────────────
+
+
+def _in_memory_tracer() -> tuple[InMemorySpanExporter, trace.Tracer]:
+    exporter = InMemorySpanExporter()
+    provider = SDKTracerProvider()
+    provider.add_span_processor(SimpleSpanProcessor(exporter))
+    return exporter, provider.get_tracer("test")
+
+
+def test_tool_span_has_inputs_and_error_status_on_failure():
+    # Spec: every tool call is a span with input attributes and status.
+    import ilostat_mcp.server as server_mod
+
+    exporter, tracer = _in_memory_tracer()
+    with (
+        patch.object(server_mod, "_tracer", tracer),
+        pytest.raises(ValueError, match="Unknown dataflow"),
+    ):
+        server_mod.get_time_series(
+            "DF_INVALID_FLOW_9999", _VALID_COUNTRY, "2020", "2022"
+        )
+
+    (span,) = exporter.get_finished_spans()
+    assert span.name == "tool.get_time_series"
+    attrs = dict(span.attributes or {})
+    assert attrs["dataflow_id"] == "DF_INVALID_FLOW_9999"
+    assert attrs["age_group"] == "total"  # defaults are recorded too
+    assert attrs["outcome"] == "error"
+    assert span.status.status_code == trace.StatusCode.ERROR
+
+
+def test_tool_log_includes_inputs():
+    # Spec: every tool call logs tool, inputs, outcome, duration_ms.
+    from ilostat_mcp.server import get_time_series as server_get_time_series
+
+    with (
+        patch(
+            "ilostat_mcp.resources.get_cached_countries",
+            return_value=_FAKE_COUNTRIES,
+        ),
+        patch(
+            "ilostat_mcp.sdmx_client.get_time_series",
+            return_value=_FAKE_SERIES_DF,
+        ),
+        structlog.testing.capture_logs() as log_entries,
+    ):
+        server_get_time_series(_VALID_FLOW, _VALID_COUNTRY, "2020", "2022")
+
+    (entry,) = [e for e in log_entries if e.get("event") == "tool"]
+    assert entry["tool"] == "get_time_series"
+    assert entry["inputs"]["dataflow_id"] == _VALID_FLOW
+    assert isinstance(entry["duration_ms"], int)
+
+
+def test_api_timeout_becomes_plain_error_and_error_span():
+    # Spec: infrastructure failures surface actionably, not as exception names.
+    from requests.exceptions import Timeout
+
+    exporter, tracer = _in_memory_tracer()
+    with (
+        patch.object(sdmx_client_mod, "_tracer", tracer),
+        patch.object(sdmx_client_mod._client, "data", side_effect=Timeout()),
+        pytest.raises(RuntimeError, match="timed out"),
+    ):
+        sdmx_client_mod.get_time_series(_VALID_FLOW, _VALID_COUNTRY, "2020", "2022")
+
+    (span,) = exporter.get_finished_spans()
+    assert span.name == "ilostat.api.data"
+    assert span.status.status_code == trace.StatusCode.ERROR

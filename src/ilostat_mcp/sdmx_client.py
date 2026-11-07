@@ -4,22 +4,29 @@ ILOSTAT SDMX client — the only file in the codebase that imports sdmx1.
 All other modules receive plain pandas DataFrames or plain dicts from here;
 sdmx1 specifics never leak past this boundary.
 
-Design decisions (all resolved in Phase 0 + Phase 2b):
+Design decisions (Phase 0, 2b and 5):
 - cloudscraper session replaces the default requests session to bypass Cloudflare
 - sdmx.to_pandas(resp, attributes="o") surfaces observation-level attributes
   (SOURCE, OBS_STATUS, etc.) that the default call drops
 - FREQ is filtered post-fetch in pandas, not in the SDMX key dict
-- AGE/CUR/GEO dimension included in key dict only when the caller passes a value
-- HTTPError on 404/400 → return empty DataFrame/dict (no data or invalid flow ID)
-- last_updated comes from the LAST_UPDATE annotation in client.dataflow()
-- MEASURE column dropped from output (always single-valued per flow)
+- Extra dimensions (AGE/CUR/GEO/DSB) are sent only when the caller passes them
+- HTTP 404/400 on a data request → empty DataFrame (no data for that country)
+- The catalogue is fetched whole (get_catalogue); search and metadata are
+  answered from it by the callers, which cache it
+- Flow annotations keep their name in `.type` and their value in `.title`
+  (e.g. type="LAST_UPDATE", title="01/11/2026 07:13:16")
 - 30-second timeout via _client._send_kwargs — sdmx1 passes this to session.send()
-- ConnectionError/Timeout/429/500/503 → RuntimeError with plain-English message
+- Timeout / connection failure / other HTTP errors → RuntimeError with a
+  plain-English message
 """
 
 import html
+import sys
 import time
-from typing import cast
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass
+from datetime import datetime
+from typing import TypeVar, cast
 
 import cloudscraper
 import pandas as pd
@@ -30,14 +37,15 @@ from bs4 import BeautifulSoup
 from requests.exceptions import ConnectionError as RequestsConnectionError
 from requests.exceptions import HTTPError, Timeout
 
-from ilostat_mcp.indicators import is_modelled
+from ilostat_mcp.indicators import SEX_TOTAL, is_modelled
 from ilostat_mcp.telemetry import get_tracer
 
 logger: structlog.BoundLogger = structlog.get_logger()
 _tracer = get_tracer(__name__)
 
-# ── Client setup ─────────────────────────────────────────────────────────────
+_T = TypeVar("_T")
 
+# ── Client setup ─────────────────────────────────────────────────────────────
 
 _TIMEOUT_SECONDS = 30  # applied to every ILOSTAT API request
 
@@ -49,15 +57,29 @@ _client.session = _scraper
 # Setting timeout here makes it apply globally without repeating it per call.
 _client._send_kwargs["timeout"] = _TIMEOUT_SECONDS
 
+# ── Constants ────────────────────────────────────────────────────────────────
+
+_HTTP_OK = 200
+_NOT_FOUND_STATUSES = (400, 404)  # ILOSTAT's "no data" / "no such flow" answers
+_AREA_CODELIST = "CL_AREA"
+_ANNOTATION_ORDER = "ORDER"  # ILOSTAT's own ranking of flows
+_ANNOTATION_LAST_UPDATE = "LAST_UPDATE"  # when ILOSTAT last refreshed the flow
+_LAST_UPDATE_FORMAT = "%d/%m/%Y %H:%M:%S"  # day first, e.g. "25/10/2026 21:50:07"
+_UNRANKED = sys.maxsize  # sorts flows without an ORDER annotation last
+
+_TIMEOUT_MESSAGE = (
+    "ILOSTAT API request timed out — the server may be slow or unavailable. Try again."
+)
+_CONNECTION_MESSAGE = "Could not reach ILOSTAT's API — check your internet connection."
+
 # Columns to keep in get_time_series output (snake_case after lowering).
 # Dropped as uninformative:
 # - freq: always "A" — we filter to annual before returning
-# - sex: always "SEX_T" — hardcoded in every fetch
-# - age/cur/geo: per-call constants that reflect the caller's own input
+# - sex/age/cur/geo/dsb: per-call constants that reflect the caller's own input
 # - note_classif: always empty in ILOSTAT responses
 # - unit_measure_type, unit_mult, note_source, note_indicator, decimals, bounds:
 #   metadata noise or empty
-# obs_status is kept — "B" appears on break-year observations and has real signal.
+# obs_status is kept — "B" marks ILOSTAT's own methodology-break flag.
 _KEEP_COLUMNS = {
     "time_period",
     "value",
@@ -67,16 +89,11 @@ _KEEP_COLUMNS = {
 }
 
 
-# ── Error helpers ────────────────────────────────────────────────────────────
+# ── Request helpers ──────────────────────────────────────────────────────────
 
 
-def _plain_english_error(exc: HTTPError) -> RuntimeError:
-    """Convert a non-404 HTTPError to a RuntimeError with a user-facing message.
-
-    Callers handle 404/400 themselves (empty result contract). This converts
-    everything else to a message Claude can relay to the user.
-    """
-    status = exc.response.status_code if exc.response is not None else None
+def _plain_english_error(status: int | None) -> RuntimeError:
+    """Convert an HTTP error status to a RuntimeError with a user-facing message."""
     if status == 429:
         return RuntimeError("ILOSTAT rate limit reached — wait a moment and try again.")
     if status in (500, 503):
@@ -85,6 +102,95 @@ def _plain_english_error(exc: HTTPError) -> RuntimeError:
             " Try again shortly."
         )
     return RuntimeError(f"ILOSTAT API error (HTTP {status}).")
+
+
+def _request(
+    span_name: str,
+    call: Callable[[], _T],
+    *,
+    allow_not_found: bool,
+    **attrs: str,
+) -> _T | None:
+    """
+    Run one ILOSTAT API call inside a span, with a debug log and clean errors.
+
+    Parameters
+    ----------
+    span_name       : OTel span name, e.g. "ilostat.api.data"
+    call            : zero-argument function that performs the sdmx1 request
+    allow_not_found : if True, HTTP 400/404 returns None instead of raising
+    attrs           : context recorded on the span and in the log (flow_id, ...)
+
+    Returns
+    -------
+    The call's result, or None for 400/404 when allow_not_found is True.
+
+    Raises
+    ------
+    RuntimeError with a plain-English message on timeout, connection failure,
+    or any other HTTP error.
+    """
+    t0 = time.perf_counter()
+    with _tracer.start_as_current_span(span_name) as span:
+        for key, value in attrs.items():
+            span.set_attribute(key, value)
+        try:
+            result = call()
+        except Timeout as exc:
+            raise RuntimeError(_TIMEOUT_MESSAGE) from exc
+        except RequestsConnectionError as exc:
+            raise RuntimeError(_CONNECTION_MESSAGE) from exc
+        except HTTPError as exc:
+            status = exc.response.status_code if exc.response is not None else None
+            if status is not None:
+                span.set_attribute("http_status", status)
+            _log_api(attrs, status, t0)
+            if allow_not_found and status in _NOT_FOUND_STATUSES:
+                return None
+            raise _plain_english_error(status) from exc
+        span.set_attribute("http_status", _HTTP_OK)
+        _log_api(attrs, _HTTP_OK, t0)
+        return result
+
+
+def _log_api(attrs: Mapping[str, str], status: int | None, t0: float) -> None:
+    """Emit the per-request DEBUG log line."""
+    logger.debug(
+        "api",
+        **attrs,
+        http_status=status,
+        duration_ms=int((time.perf_counter() - t0) * 1000),
+    )
+
+
+def _annotation(flow: object, annotation_type: str) -> str | None:
+    """Return the value of a flow's annotation of the given type, or None."""
+    for ann in getattr(flow, "annotations", []):
+        if getattr(ann, "type", None) == annotation_type:
+            title = getattr(ann, "title", None)
+            return str(title) if title is not None else None
+    return None
+
+
+def _order(flow: object) -> int:
+    """Return ILOSTAT's ORDER rank for a flow; flows without one sort last."""
+    raw = _annotation(flow, _ANNOTATION_ORDER)
+    try:
+        return int(raw) if raw is not None else _UNRANKED
+    except ValueError:
+        return _UNRANKED
+
+
+def _last_updated(flow: object) -> str | None:
+    """Return the flow's LAST_UPDATE annotation as an ISO 8601 string, or None."""
+    raw = _annotation(flow, _ANNOTATION_LAST_UPDATE)
+    if raw is None:
+        return None
+    try:
+        return datetime.strptime(raw, _LAST_UPDATE_FORMAT).isoformat()
+    except ValueError:
+        logger.warning("unparseable_last_update", value=raw)
+        return None
 
 
 # ── Public functions ──────────────────────────────────────────────────────────
@@ -96,11 +202,9 @@ def get_time_series(
     start: str,
     end: str,
     *,
+    dims: Mapping[str, str] | None = None,
     freq: str = "A",
-    sex: str = "SEX_T",
-    age: str | None = None,
-    cur: str | None = None,
-    geo: str | None = None,
+    sex: str = SEX_TOTAL,
 ) -> pd.DataFrame:
     """
     Fetch a time series from ILOSTAT and return a clean DataFrame.
@@ -111,266 +215,134 @@ def get_time_series(
     country : ISO 3166-1 alpha-3 country code (e.g. "DEU")
     start   : start year, inclusive (e.g. "2010")
     end     : end year, inclusive (e.g. "2023")
+    dims    : extra SDMX dimension values, e.g. {"AGE": "AGE_YTHADULT_YGE15"}.
+              Any dimension left out returns every value of it, i.e. several
+              rows per year.
     freq    : frequency filter applied post-fetch ("A" = annual, "Q" = quarterly)
-    sex     : SEX dimension value (default "SEX_T" = total)
-    age     : AGE dimension value; include only if the flow uses AGE
-    cur     : CUR dimension value; include only if the flow uses CUR
-    geo     : GEO dimension value; include only for flows with a GEO dimension
-              (e.g. "GEO_COV_NAT" = national total)
+    sex     : SEX dimension value (default SEX_TOTAL)
 
     Returns
     -------
-    DataFrame with columns: time_period, value, obs_status, source,
-    unit_measure, freq, sex, [age|cur|geo if present], note_classif.
-    Empty DataFrame if the country has no data (404).
-    """
-    key: dict[str, str] = {"REF_AREA": country, "SEX": sex}
-    if age is not None:
-        key["AGE"] = age
-    if cur is not None:
-        key["CUR"] = cur
-    if geo is not None:
-        key["GEO"] = geo
+    DataFrame with the columns in _KEEP_COLUMNS that ILOSTAT returned:
+    time_period (str), value, obs_status, source, unit_measure.
+    Empty DataFrame if the country has no data (HTTP 404/400).
 
-    t0 = time.perf_counter()
-    with _tracer.start_as_current_span("ilostat.api.data") as span:
-        span.set_attribute("flow_id", flow_id)
-        span.set_attribute("country", country)
-        try:
-            resp = _client.data(
-                flow_id,
-                key=key,
-                params={"startPeriod": start, "endPeriod": end},
-            )
-            duration_ms = int((time.perf_counter() - t0) * 1000)
-            span.set_attribute("http_status", 200)
-            logger.debug(
-                "api",
-                flow_id=flow_id,
-                country=country,
-                http_status=200,
-                duration_ms=duration_ms,
-            )
-        except Timeout as exc:
-            raise RuntimeError(
-                "ILOSTAT API request timed out — the server may be slow or"
-                " unavailable. Try again."
-            ) from exc
-        except RequestsConnectionError as exc:
-            raise RuntimeError(
-                "Could not reach ILOSTAT's API — check your internet connection."
-            ) from exc
-        except HTTPError as exc:
-            status = exc.response.status_code if exc.response is not None else None
-            duration_ms = int((time.perf_counter() - t0) * 1000)
-            if status is not None:
-                span.set_attribute("http_status", status)
-            logger.debug(
-                "api",
-                flow_id=flow_id,
-                country=country,
-                http_status=status,
-                duration_ms=duration_ms,
-            )
-            if exc.response is not None and exc.response.status_code in (404, 400):
-                return pd.DataFrame()
-            raise _plain_english_error(exc) from exc
+    Raises
+    ------
+    RuntimeError with a plain-English message on timeout, connection failure,
+    or any other HTTP error.
+    """
+    key: dict[str, str] = {"REF_AREA": country, "SEX": sex, **(dims or {})}
+    resp = _request(
+        "ilostat.api.data",
+        lambda: _client.data(
+            flow_id, key=key, params={"startPeriod": start, "endPeriod": end}
+        ),
+        allow_not_found=True,
+        flow_id=flow_id,
+        country=country,
+    )
+    if resp is None:
+        return pd.DataFrame()
 
     df = cast(pd.DataFrame, sdmx.to_pandas(resp, attributes="o")).reset_index()  # type: ignore[no-untyped-call]
-
     if df.empty:
         return df
 
-    # Normalise column names to snake_case
     df.columns = [c.lower() for c in df.columns]
-
-    # Filter to requested frequency
     if "freq" in df.columns and freq:
         df = df[df["freq"] == freq]
-
-    # Keep only the columns we want; ignore any that aren't present
-    present = [c for c in df.columns if c in _KEEP_COLUMNS]
-    df = df[present].copy()
-
-    # Ensure time_period is a string (sdmx1 may return a Period object)
+    df = df[[c for c in df.columns if c in _KEEP_COLUMNS]].copy()
+    # sdmx1 may return a Period object; downstream code compares year strings.
     if "time_period" in df.columns:
         df["time_period"] = df["time_period"].astype(str)
-
     return df.reset_index(drop=True)
 
 
-def get_indicator_metadata(flow_id: str) -> dict[str, object]:
+@dataclass(frozen=True)
+class FlowInfo:
     """
-    Return title, description, and last_updated for a dataflow.
+    One entry of ILOSTAT's dataflow catalogue, as plain data.
 
-    last_updated comes from the LAST_UPDATE annotation in the dataflow
-    response — this is when ILOSTAT last refreshed the data, not when
-    the API response was generated.
-
-    Returns an empty dict if the flow ID is invalid (404).
+    description has its HTML stripped. last_updated is when ILOSTAT last
+    refreshed the flow's data (ISO 8601), or None if not provided.
     """
-    t0 = time.perf_counter()
-    with _tracer.start_as_current_span("ilostat.api.dataflow") as span:
-        span.set_attribute("flow_id", flow_id)
-        try:
-            resp = _client.dataflow(flow_id)
-            duration_ms = int((time.perf_counter() - t0) * 1000)
-            span.set_attribute("http_status", 200)
-            logger.debug(
-                "api", flow_id=flow_id, http_status=200, duration_ms=duration_ms
-            )
-        except Timeout as exc:
-            raise RuntimeError(
-                "ILOSTAT API request timed out — the server may be slow or"
-                " unavailable. Try again."
-            ) from exc
-        except RequestsConnectionError as exc:
-            raise RuntimeError(
-                "Could not reach ILOSTAT's API — check your internet connection."
-            ) from exc
-        except HTTPError as exc:
-            status = exc.response.status_code if exc.response is not None else None
-            duration_ms = int((time.perf_counter() - t0) * 1000)
-            if status is not None:
-                span.set_attribute("http_status", status)
-            logger.debug(
-                "api", flow_id=flow_id, http_status=status, duration_ms=duration_ms
-            )
-            if exc.response is not None and exc.response.status_code in (404, 400):
-                return {}
-            raise _plain_english_error(exc) from exc
 
-    flows = resp.dataflow
-    if flow_id not in flows:
-        return {}
+    id: str
+    title: str
+    description: str
+    is_modelled: bool
+    last_updated: str | None
 
-    flow = flows[flow_id]
-    name = str(flow.name) if flow.name else ""
-    raw_desc = str(flow.description) if getattr(flow, "description", None) else ""
-    description = BeautifulSoup(raw_desc, "html.parser").get_text(
-        separator=" ", strip=True
+
+def get_catalogue() -> dict[str, FlowInfo]:
+    """
+    Download ILOSTAT's full dataflow catalogue (~1,200 flows, ~5-8 s).
+
+    Returns flow ID -> FlowInfo, in ILOSTAT's own ORDER ranking (flows
+    without one come last). Callers should cache this; it changes rarely.
+
+    Raises
+    ------
+    RuntimeError with a plain-English message on any API failure, or if
+    ILOSTAT returns an empty catalogue.
+    """
+    resp = cast(
+        sdmx.message.StructureMessage,
+        _request(
+            "ilostat.api.dataflow_all",
+            lambda: _client.dataflow(),
+            allow_not_found=False,
+        ),
     )
-
-    return {
-        "id": flow_id,
-        "title": name,
-        "description": description,
-        "is_modelled": is_modelled(flow_id),
-    }
+    if not resp.dataflow:
+        raise RuntimeError("ILOSTAT returned an empty dataflow list — try again.")
+    ranked = sorted(resp.dataflow.items(), key=lambda item: _order(item[1]))
+    return {flow_id: _flow_info(flow_id, flow) for flow_id, flow in ranked}
 
 
-def search_indicators(
-    keyword: str, *, max_results: int = 20
-) -> list[dict[str, object]]:
-    """
-    Search ILOSTAT dataflows by keyword and return matching flows.
-
-    Searches flow titles (flow.name). Results are returned in ILOSTAT's
-    native ORDER annotation order, capped at max_results.
-
-    Each result dict has keys: id, title, is_modelled.
-    """
-    keyword_lower = keyword.lower()
-    matches: list[tuple[int, dict[str, object]]] = []
-
-    t0 = time.perf_counter()
-    with _tracer.start_as_current_span("ilostat.api.dataflow_all") as span:
-        span.set_attribute("keyword", keyword)
-        try:
-            resp = _client.dataflow()
-            duration_ms = int((time.perf_counter() - t0) * 1000)
-            span.set_attribute("http_status", 200)
-            logger.debug(
-                "api", keyword=keyword, http_status=200, duration_ms=duration_ms
-            )
-        except Timeout as exc:
-            raise RuntimeError(
-                "ILOSTAT API request timed out — the server may be slow or"
-                " unavailable. Try again."
-            ) from exc
-        except RequestsConnectionError as exc:
-            raise RuntimeError(
-                "Could not reach ILOSTAT's API — check your internet connection."
-            ) from exc
-        except HTTPError as exc:
-            status = exc.response.status_code if exc.response is not None else None
-            duration_ms = int((time.perf_counter() - t0) * 1000)
-            if status is not None:
-                span.set_attribute("http_status", status)
-            logger.debug(
-                "api", keyword=keyword, http_status=status, duration_ms=duration_ms
-            )
-            raise _plain_english_error(exc) from exc
-
-    for flow_id, flow in resp.dataflow.items():
-        title = str(flow.name) if flow.name else ""
-        if keyword_lower not in title.lower():
-            continue
-
-        order = 9999
-        for ann in getattr(flow, "annotations", []):
-            if getattr(ann, "id", None) == "ORDER":
-                try:
-                    order = int(str(ann.text))
-                except (ValueError, TypeError):
-                    pass
-                break
-
-        matches.append(
-            (
-                order,
-                {
-                    "id": flow_id,
-                    "title": title,
-                    "is_modelled": is_modelled(flow_id),
-                },
-            )
-        )
-
-    matches.sort(key=lambda x: x[0])
-    return [m[1] for m in matches[:max_results]]
+def _flow_info(flow_id: str, flow: object) -> FlowInfo:
+    """Convert one sdmx1 dataflow object to a FlowInfo."""
+    name = getattr(flow, "name", None)
+    raw_desc = getattr(flow, "description", None)
+    return FlowInfo(
+        id=flow_id,
+        title=str(name) if name else "",
+        description=BeautifulSoup(
+            str(raw_desc) if raw_desc else "", "html.parser"
+        ).get_text(separator=" ", strip=True),
+        is_modelled=is_modelled(flow_id),
+        last_updated=_last_updated(flow),
+    )
 
 
 def get_countries() -> list[dict[str, str]]:
     """
-    Return the list of valid country/area codes from ILOSTAT's CL_AREA codelist.
+    Return the valid country/area codes from ILOSTAT's CL_AREA codelist.
 
-    Each entry has keys: code, name.
+    Each entry has keys: code, name; sorted by code.
 
     Raises RuntimeError on any API failure — an empty list is never a valid
     result (ILOSTAT always has countries), so callers cannot treat [] as
     "no countries".
     """
-    t0 = time.perf_counter()
-    with _tracer.start_as_current_span("ilostat.api.codelist") as span:
-        try:
-            resp = _client.codelist("CL_AREA")
-            duration_ms = int((time.perf_counter() - t0) * 1000)
-            span.set_attribute("http_status", 200)
-            logger.debug("api", http_status=200, duration_ms=duration_ms)
-        except Timeout as exc:
-            raise RuntimeError(
-                "ILOSTAT API request timed out — the server may be slow or"
-                " unavailable. Try again."
-            ) from exc
-        except RequestsConnectionError as exc:
-            raise RuntimeError(
-                "Could not reach ILOSTAT's API — check your internet connection."
-            ) from exc
-        except HTTPError as exc:
-            status = exc.response.status_code if exc.response is not None else None
-            duration_ms = int((time.perf_counter() - t0) * 1000)
-            if status is not None:
-                span.set_attribute("http_status", status)
-            logger.debug("api", http_status=status, duration_ms=duration_ms)
-            raise _plain_english_error(exc) from exc
-
-    areas: list[dict[str, str]] = []
-    for codelist in resp.codelist.values():
-        # codelist.items is a plain dict {code_id: Code}, not a bound method
-        for code_id, code in codelist.items.items():
-            name = html.unescape(str(code.name)) if code.name else str(code_id)
-            areas.append({"code": str(code_id), "name": name})
-        break  # only the first (and only) CL_AREA codelist
-
-    return sorted(areas, key=lambda x: x["code"])
+    resp = cast(
+        sdmx.message.StructureMessage,
+        _request(
+            "ilostat.api.codelist",
+            lambda: _client.codelist(_AREA_CODELIST),
+            allow_not_found=False,
+        ),
+    )
+    if not resp.codelist:
+        raise RuntimeError("ILOSTAT returned no country list — try again shortly.")
+    codelist = next(iter(resp.codelist.values()))
+    # codelist.items is a plain dict {code_id: Code}, not a bound method
+    areas = [
+        {
+            "code": str(code_id),
+            "name": html.unescape(str(code.name)) if code.name else str(code_id),
+        }
+        for code_id, code in codelist.items.items()
+    ]
+    return sorted(areas, key=lambda a: a["code"])

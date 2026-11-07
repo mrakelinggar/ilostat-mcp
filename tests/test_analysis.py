@@ -235,3 +235,28 @@ class TestTrend:
         df = make_df(["2020", "2021"], [5.0, 6.0])
         with pytest.raises(ValueError, match="2022"):
             trend(df, "2020", "2022")
+
+
+# -- Missing values -------------------------------------------------------------
+
+
+class TestMissingValues:
+    """ILOSTAT returns NaN for some observations; those count as missing years."""
+
+    def test_yoy_nan_prev_value_raises_not_found(self) -> None:
+        df = make_df(["2019", "2020"], [float("nan"), 10.0])
+        with pytest.raises(ValueError, match="Previous year '2019' not found"):
+            yoy(df, "2020")
+
+    def test_cagr_nan_end_value_raises_not_found(self) -> None:
+        df = make_df(["2018", "2020"], [100.0, float("nan")])
+        with pytest.raises(ValueError, match="end_year '2020' not found"):
+            cagr(df, "2018", "2020")
+
+    def test_trend_skips_nan_interior_point(self) -> None:
+        # Points (2018, 1), (2020, 3) after dropping the NaN year 2019:
+        # slope = (3 - 1) / (2020 - 2018) = 1.0, n_points = 2
+        df = make_df(["2018", "2019", "2020"], [1.0, float("nan"), 3.0])
+        result = trend(df, "2018", "2020")
+        assert result["slope"] == 1.0
+        assert result["n_points"] == 2

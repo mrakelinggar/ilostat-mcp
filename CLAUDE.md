@@ -155,7 +155,7 @@ to a future version when the MCP has real traffic to aggregate.
 
 ### Dependencies and versioning
 - **Semantic versioning** (`MAJOR.MINOR.PATCH`) in `pyproject.toml`.
-- **Dependencies have upper bounds** — `fastmcp>=2.0,<3.0` not `fastmcp>=2.0`.
+- **Dependencies have upper bounds** — `fastmcp>=2.0,<4.0` not `fastmcp>=2.0`.
   Prevents silent breakage when upstream releases a major version.
 - **`uv.lock` is committed** for reproducible installs.
 
@@ -170,7 +170,7 @@ to a future version when the MCP has real traffic to aggregate.
 | SDMX transport | `sdmx1` (has a built-in, actively maintained `ILO` source — do not hand-roll SDMX parsing) |
 | Data domain | ILOSTAT only, **employment + wages** themes for v1 (not the full ILOSTAT catalog) |
 | Analytical depth | Derived stats: YoY change, CAGR, trend. Not pure pass-through, not full statistical modeling. |
-| Data storage | None — every call hits ILOSTAT's live SDMX API. No local snapshot, no database. |
+| Data storage | In-process memory cache only — no disk, no database, lost on restart (decided 2026-11-07; ILOSTAT data changes rarely — 1,107 of 1,215 flows were last refreshed in one October 2026 batch). Catalogue + countries: 24 h. Series: full history per (flow, country, age group), 24 h, "no data" 1 h, LRU cap 500; keyed on the flow's LAST_UPDATE when the catalogue is in memory. Failures never cached. |
 | Distribution | Local install via `pip`/`uvx`, no hosted remote server for v1 |
 | Verbosity/reasoning exposure | Rely on the MCP client's native tool-call panel (Claude Desktop, etc.). No custom `explain` flag or server-side reasoning field — deferred to v2 if ever. |
 | Structured logging | `structlog` — JSON output, never bare `print()` or stdlib `logging` with plain-text formatter |
@@ -309,12 +309,13 @@ ilostat-mcp/
 │   │                      # specifics never leak past this file.
 │   ├── indicators.py      # Registry mapping theme name -> dataflow ID(s).
 │   │                      # Adding a new theme = adding entries here only.
-│   ├── breaks.py          # Methodology-break detection (SOURCE attribute diff,
-│   │                      # OBS_PRE_BREAK_VALUE check) — see "Break detection" below
+│   ├── cache.py           # TTLCache: in-memory, expiring, size-capped, thread-safe
+│   ├── breaks.py          # Methodology-break detection (ILOSTAT "B" flag +
+│   │                      # SOURCE change) — see "Break detection" below
 │   ├── analysis/
 │   │   ├── growth.py      # yoy(), cagr(), trend() — pure functions, unit-testable
 │   │   └── __init__.py    # future analysis functions register here
-│   └── resources.py       # system-prompt resource, codelist caching
+│   └── resources.py       # system-prompt resource, catalogue + country caches
 ├── tests/
 │   ├── test_sdmx_client.py
 │   ├── test_analysis.py   # verify math against hand-calculated cases, not just
@@ -365,11 +366,17 @@ function -> add to `analysis/`, register one new tool in `server.py`. Never let
 
 Every `get_time_series` call runs break detection automatically:
 
-1. **SOURCE attribute diff** — compare consecutive observations' `SOURCE`
-   attribute (e.g. "LFS – Labour Force Survey" vs. an administrative-records
-   source); a change flags a methodology break at that point
-2. **`OBS_PRE_BREAK_VALUE`** — SDMX's own standard mechanism for flagging a
-   break, when ILOSTAT populates it
+1. **ILOSTAT's break flag** — `obs_status = "B"` ("break in series") on the
+   first year after a methodology change. Catches survey redesigns that keep
+   the same survey name, which the source check cannot see.
+2. **SOURCE change** — the survey source differs from the last known source
+   (e.g. a census replaced by a labour force survey). Catches changes ILOSTAT
+   did not flag.
+
+Either signal records a break; each break lists its `reasons`. Phase 5 scan
+(`local-notes/release-0.1.0/execution/phase05/phase5_break_detection_findings.md`):
+the source check alone missed ~70% of ILOSTAT's own flags.
+`OBS_PRE_BREAK_VALUE` is not used — ILOSTAT leaves it empty.
 
 `get_cagr` and `get_trend` must check for breaks inside the requested range
 before computing, and either warn in the response or refuse — silently
@@ -416,7 +423,8 @@ Full methodology lives in `benchmark/BENCHMARK_SCHEMA.md` and
 - No hand-rolled SDMX parsing outside `sdmx_client.py` — `sdmx1` already
   handles ILO's quirks (SDMX-ML 2.0 default response, missing `references`
   parameter values); redoing this has no portfolio value and adds bug surface
-- No local caching/snapshotting of ILOSTAT data — always live
+- No persistent caching (disk, database, snapshots) of ILOSTAT data — memory
+  cache only, as set in the Data storage decision above
 - No custom `explain`/verbosity flag on tools — rely on the client's native
   tool-call display
 - No expanding scope beyond employment + wages without an explicit decision

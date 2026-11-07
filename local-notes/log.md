@@ -2,6 +2,78 @@
 
 ---
 
+## 2026-11-07 — Code review, break-detection fix, refactor
+
+Reviewed the whole codebase for bugs, duplication and the open/closed
+principle, then fixed everything found and added caching.
+
+**Bugs fixed:**
+- **Logs were written to stdout.** On the stdio transport stdout is the MCP
+  protocol channel. Moved to stderr; verified by driving the real server over
+  stdio (stdout now carries only protocol messages).
+- **Break detection missed ~70% of ILOSTAT's own break flags.** It only compared
+  survey-source names, so redesigns that kept the same name went unnoticed
+  (e.g. Australia 2018). Now either ILOSTAT's `B` flag or a source change records
+  a break, with a `reasons` list. Full write-up:
+  `release-0.1.0/execution/phase05/phase5_break_detection_findings.md`.
+- **The disability flow mixed 8-11 groups per year** (age bands x disability
+  status), so YoY/CAGR picked an arbitrary row and trend went NaN. It is a
+  youth-only flow; it now sends the DSB total and the caller's age group.
+  A guard now raises if any flow ever returns several rows per year.
+- **Search ranking and last_updated never worked.** ILOSTAT puts annotation
+  names in `.type` and values in `.title`; the code read `.id` / `.text`.
+  Search now follows ILOSTAT's ORDER; metadata now returns `last_updated`.
+- **Current year was frozen at import**, so a long-running server would reject
+  new-year data. Now read on every call.
+- Empty values (NaN) are treated as missing years in YoY/CAGR/trend instead of
+  producing NaN output.
+
+**Refactor (same tool schemas — verified by diffing list_tools before/after):**
+- One `_request` helper in sdmx_client replaces 4 copies of error handling.
+- One `_instrumented` wrapper in server.py replaces 8 copies of span/log code;
+  logs now carry `inputs` as CLAUDE.md specifies.
+- `FlowSpec` replaces four parallel registries (FLOWS, FLOW_DIMS, FLOW_MIN_YEARS,
+  CANONICAL_FLOWS). Adding a flow is one entry.
+- get_cagr / get_trend share one implementation. tools/ + sdmx_client + server
+  went from ~1,300 to ~1,000 lines.
+
+**Corrected during the session:** the review claimed error spans were not
+marked as errors in Honeycomb. Wrong — OTel already does this when an exception
+leaves a span. Added a test to lock it in instead.
+
+**Tests:** 131 → 158 after the fixes, all passing (live API). ruff + mypy clean.
+
+**Open — needs a decision:**
+- Benchmark q003/q018 ask about Nigeria's overall unemployment but point at the
+  youth-only disability flow. Re-point them (probably to DF_UNE_DEAP_SEX_AGE_RT)
+  and re-verify ground truth.
+- More break warnings will now appear; re-check `answerable_break` ground truth
+  and the `mcp_no_breakcheck` condition before the next benchmark run.
+- Search only matches titles, though CLAUDE.md says titles/descriptions:
+  `search_indicators("wages")` returns nothing (the wage flow is titled
+  "Average monthly earnings..."). Descriptions are now in memory, so this is
+  cheap to add — but it changes which flows the agent finds.
+
+**Caching (built later the same session):**
+- New `cache.TTLCache`: in memory, expiring, LRU size cap, thread-safe, never
+  caches failures.
+- Catalogue (24 h) now serves both search and metadata; countries cache gets
+  a 24 h limit instead of living forever.
+- Series: full history per (flow, country, age group), cut to the requested
+  years locally; 24 h, "no data" 1 h, cap 500 (~5 MB). The key includes the
+  flow's LAST_UPDATE only when the catalogue is already in memory — requiring
+  it would have added the 5-8 s catalogue download to the first data call.
+- Measured live: first search 2.7 s, later searches/metadata ~0 s; first series
+  1.7 s, CAGR/trend on the same series ~0 s.
+- CLAUDE.md "Data storage" decision and "what not to do" updated; README has a
+  data-freshness note (answers can be up to 24 h behind the live site).
+- Tests 158 → 172.
+- Trade-off: get_indicator_metadata on a cold process now downloads the whole
+  catalogue (5-8 s) instead of one flow. The system prompt's call order puts
+  search first, so the catalogue is normally warm by then.
+
+---
+
 ## 2026-09-24 — ICLS standard investigation
 
 Investigated whether switching the canonical unemployment flow from 13th ICLS

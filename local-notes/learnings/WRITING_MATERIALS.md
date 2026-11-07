@@ -114,6 +114,30 @@ taken from Honeycomb).
 
 ---
 
+## From ilostat-mcp (2026-11-07)
+
+### "Your break detector missed 70% of the breaks — check your heuristic against the publisher's own flags"
+
+**The hook:** we detected methodology breaks by watching for survey-source
+changes. Comparing that against ILOSTAT's own break flag (`obs_status = "B"`)
+across 159 live series showed the heuristic missed 168 of 241 flagged breaks —
+survey redesigns that kept the same name. It also raised 234 alarms the
+publisher never flagged, some real (census → labour survey), some pure label
+noise.
+
+**What makes it substantive:**
+- Real numbers from a re-runnable scan, not a thought experiment
+- A general lesson: a plausible heuristic plus passing tests is not validation;
+  the test cases were chosen from cases the heuristic already caught
+- The fix is "either signal", with a `reasons` field — and why erring towards
+  a false warning is the right trade for a hallucination-prevention tool
+- Live before/after: an Australian CAGR that silently spanned a break now warns
+
+**Filters:** underserved (break detection is rarely discussed for LLM tools),
+provable (scan + JSON), specific (one heuristic, one dataset, one fix).
+
+---
+
 ## Rules for adding new ideas
 
 - Must be grounded in a real decision or finding — not "here's a concept I read about"

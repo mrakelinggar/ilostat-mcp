@@ -57,17 +57,21 @@ Restart Claude Desktop after editing the config. Confirm **ilostat-mcp** appears
 
 ## Methodology-break detection
 
-Every `get_time_series` call automatically checks for SOURCE attribute changes and `OBS_PRE_BREAK_VALUE` flags. When `get_cagr` or `get_trend` detects a break inside the requested range, it warns or refuses to compute — a trend line through a methodology break is a wrong number that looks right.
+Every `get_time_series` call automatically checks two signals: ILOSTAT's own break flag (`obs_status = "B"`, which catches survey redesigns that keep the same name) and changes in the survey source. Each break lists which signal found it. When a break falls inside the range of `get_yoy_change`, `get_cagr` or `get_trend`, the result carries a `_break_warning` — a trend line through a methodology break is a wrong number that looks right.
 
-Example:
+Example — `get_cagr("DF_UNE_DEAP_SEX_AGE_RT", "AUS", "2015", "2020")`. ILOSTAT flags a break in Australia's series in 2018, but the survey name is the same on both sides, so a source comparison alone would miss it:
 
+```json
+"_breaks": [{"year": "2018",
+             "source_before": "LFS - Labour Force Survey",
+             "source_after": "LFS - Labour Force Survey",
+             "reasons": ["ilostat_break_flag"]}],
+"_break_warning": "Methodology break within 2015-2020 at 2018 (ILOSTAT flags a break in series). Values across a methodology break are not directly comparable — interpret this result with caution."
 ```
-Warning: methodology break detected in 2019.
-SOURCE changed from "LFS – Labour Force Survey" to "Administrative records"
-— the survey source changed mid-series, so the numbers aren't comparable.
 
-CAGR not computed. Use get_time_series to inspect each sub-series separately.
-```
+## Data freshness
+
+Everything comes from ILOSTAT's live SDMX API and is kept in memory for up to 24 hours, so repeated questions don't re-download the same data. An answer can therefore be up to 24 hours behind the live site; restarting the server always fetches fresh. Nothing is stored on disk.
 
 ## Benchmark
 

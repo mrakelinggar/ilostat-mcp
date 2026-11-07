@@ -1,13 +1,8 @@
 """Prompt handler for the labour market snapshot workflow."""
 
-import time
+from ilostat_mcp import resources
 
-import structlog
-
-from ilostat_mcp import resources, telemetry
-
-logger: structlog.BoundLogger = structlog.get_logger()
-_tracer = telemetry.get_tracer(__name__)
+MAX_COUNTRIES = 3  # v1 spec: the snapshot prompt accepts 1-3 countries
 
 
 def _resolve_country(inp: str, countries: list[dict[str, str]]) -> str:
@@ -66,75 +61,47 @@ def labor_market_snapshot(countries: str) -> str:
     message that instructs the model to fetch and compare key labour market
     indicators for those countries.
 
-    Raises ValueError for >3 countries, unknown names, or ambiguous names.
+    Raises ValueError for an empty list, more than 3 countries, or any unknown
+    or ambiguous name — one message covering every name that failed.
     """
-    t0 = time.perf_counter()
-    with _tracer.start_as_current_span("prompt.labor_market_snapshot") as span:
-        span.set_attribute("countries", countries)
+    inputs = [c.strip() for c in countries.split(",") if c.strip()]
+    if not inputs:
+        raise ValueError(
+            "countries must not be empty."
+            f" Provide 1-{MAX_COUNTRIES} country names or ISO-3 codes, comma-separated."
+        )
+    if len(inputs) > MAX_COUNTRIES:
+        raise ValueError(
+            f"labor_market_snapshot accepts 1-{MAX_COUNTRIES} countries,"
+            f" got {len(inputs)}: {inputs}."
+        )
+
+    country_list = resources.get_cached_countries()
+    resolved: list[str] = []
+    errors: list[str] = []
+    for inp in inputs:
         try:
-            inputs = [c.strip() for c in countries.split(",") if c.strip()]
-            n = len(inputs)
-            if n == 0:
-                raise ValueError(
-                    "countries must not be empty."
-                    " Provide 1-3 country names or ISO-3 codes, comma-separated."
-                )
-            if n > 3:
-                raise ValueError(
-                    f"labor_market_snapshot accepts 1-3 countries, got {n}: {inputs}."
-                )
+            resolved.append(_resolve_country(inp, country_list))
+        except ValueError as exc:
+            errors.append(str(exc))
+    if errors:
+        raise ValueError(" ".join(errors))
 
-            country_list = resources.get_cached_countries()
-            errors: list[ValueError] = []
-            resolved: list[str] = []
-
-            for inp in inputs:
-                try:
-                    code = _resolve_country(inp, country_list)
-                    resolved.append(code)
-                except ValueError as e:
-                    errors.append(e)
-
-            if errors:
-                raise errors[0]
-
-            codes_str = ", ".join(resolved)
-            flows_str = "\n".join(
-                f"  - {f['theme']}: {f['dataflow_id']}"
-                for f in resources.CANONICAL_FLOWS
-            )
-
-            result = (
-                f"Fetch a labour market snapshot for: {codes_str}.\n\n"
-                f"For each country, call get_time_series with the following"
-                f" dataflow IDs"
-                f" (use the most recent 2 years available):\n{flows_str}\n\n"
-                f"For each dataflow and country:\n"
-                f"1. Retrieve the data with get_time_series.\n"
-                f"2. Compute year-over-year change for the most recent year"
-                f" using get_yoy_change.\n"
-                f"3. Note any methodology breaks in the _breaks field.\n\n"
-                f"Present the results as a concise table comparing all countries."
-                f" Use ISO codes ({codes_str}) as column headers."
-                f" If data is unavailable for a country/indicator, show 'N/A'."
-            )
-            span.set_attribute("outcome", "success")
-            logger.info(
-                "prompt",
-                tool="labor_market_snapshot",
-                countries=countries,
-                outcome="success",
-                duration_ms=int((time.perf_counter() - t0) * 1000),
-            )
-            return result
-        except (ValueError, RuntimeError) as exc:
-            span.set_attribute("outcome", "error")
-            span.set_attribute("error.message", str(exc))
-            logger.info(
-                "prompt",
-                tool="labor_market_snapshot",
-                countries=countries,
-                outcome="error",
-                duration_ms=int((time.perf_counter() - t0) * 1000),
-            )
-            raise
+    codes_str = ", ".join(resolved)
+    flows_str = "\n".join(
+        f"  - {f['theme']}: {f['dataflow_id']}" for f in resources.CANONICAL_FLOWS
+    )
+    return (
+        f"Fetch a labour market snapshot for: {codes_str}.\n\n"
+        f"For each country, call get_time_series with the following"
+        f" dataflow IDs"
+        f" (use the most recent 2 years available):\n{flows_str}\n\n"
+        f"For each dataflow and country:\n"
+        f"1. Retrieve the data with get_time_series.\n"
+        f"2. Compute year-over-year change for the most recent year"
+        f" using get_yoy_change.\n"
+        f"3. Note any methodology breaks in the _breaks field.\n\n"
+        f"Present the results as a concise table comparing all countries."
+        f" Use ISO codes ({codes_str}) as column headers."
+        f" If data is unavailable for a country/indicator, show 'N/A'."
+    )

@@ -1,103 +1,9 @@
-"""Tool handler for raw time-series fetching, plus shared fetch helpers."""
+"""Tool handler for raw time-series fetching."""
 
-import time
 from typing import cast
 
-import pandas as pd
-import structlog
-
-from ilostat_mcp import breaks, sdmx_client, telemetry
-from ilostat_mcp.indicators import (
-    COUNTRY_CURRENCY,
-    CUR_DEFAULT,
-    FLOW_DIMS,
-    FLOW_MIN_YEARS,
-)
-from ilostat_mcp.validation import (
-    _AGE_GROUP_MAP,
-    _validate_age_group,
-    _validate_country,
-    _validate_dataflow,
-    _validate_year,
-)
-
-logger: structlog.BoundLogger = structlog.get_logger()
-_tracer = telemetry.get_tracer(__name__)
-
-
-# ── Shared helpers (also imported by tools/derived.py) ────────────────────────
-
-
-def _detect_gaps(df: pd.DataFrame, start_year: str, end_year: str) -> list[str]:
-    """
-    Return years in [start_year, end_year] absent from the DataFrame.
-
-    Compares the expected annual sequence against the time_period values actually
-    returned by ILOSTAT. Years with no observation are returned as strings so
-    the caller can include them in the metadata dict alongside _breaks.
-    Returns an empty list for an empty DataFrame (no data at all, not a gap).
-    """
-    if df.empty:
-        return []
-    present = set(df["time_period"].astype(str).unique())
-    expected = [str(y) for y in range(int(start_year), int(end_year) + 1)]
-    return [y for y in expected if y not in present]
-
-
-def _detection_start(start_year: str, dataflow_id: str) -> str:
-    """
-    Return the fetch start year to use for break detection.
-
-    One year before start_year, clamped to the flow's minimum year.
-    Fetching an extra year before the requested range lets detect_breaks()
-    see a source transition that occurs AT start_year — without a prior row
-    there is no previous source to compare against, so the break is silently
-    missed.
-    """
-    min_year = FLOW_MIN_YEARS.get(dataflow_id, 1900)
-    return str(max(min_year, int(start_year) - 1))
-
-
-def _fetch_df(
-    dataflow_id: str, country: str, start: str, end: str, age_group: str
-) -> pd.DataFrame:
-    """
-    Fetch a time series DataFrame via sdmx_client, resolving flow dimensions.
-
-    Looks up the flow's dimension type in FLOW_DIMS to inject the correct
-    age/cur/geo parameter. Returns an empty DataFrame if no data exists.
-    """
-    flow_info = FLOW_DIMS.get(dataflow_id, {})
-    dim = flow_info.get("dim")
-    age = _AGE_GROUP_MAP[age_group] if dim == "age" else None
-    cur = CUR_DEFAULT if dim == "cur" else None
-    geo = flow_info.get("GEO")
-    return sdmx_client.get_time_series(
-        dataflow_id, country, start, end, age=age, cur=cur, geo=geo
-    )
-
-
-# ── Tool handler ──────────────────────────────────────────────────────────────
-
-
-def _currency_for(dataflow_id: str, country: str) -> str | None:
-    """Return the ISO 4217 currency code for LCU-denominated wage flows, or None.
-
-    Wage flows (dim == "cur") return values in local currency units. This maps
-    the country to its ISO code so the agent can name the currency explicitly
-    rather than reporting a bare number.
-    """
-    if FLOW_DIMS.get(dataflow_id, {}).get("dim") == "cur":
-        return COUNTRY_CURRENCY.get(country)
-    return None
-
-
-def _extract_unit(df: pd.DataFrame) -> str | None:
-    """Return the unit_measure from the first non-null row, or None."""
-    if "unit_measure" not in df.columns:
-        return None
-    col = df["unit_measure"].dropna()
-    return str(col.iloc[0]) if not col.empty else None
+from ilostat_mcp import breaks, validation
+from ilostat_mcp.tools import series
 
 
 def get_time_series(
@@ -115,11 +21,12 @@ def get_time_series(
       _dataflow_id     : the dataflow this data came from
       _is_modelled     : true if the flow is ILO modelled estimates, not survey data
       _unit_measure    : unit of the values (e.g. "%", "USD", "EUR/month")
+      _currency_code   : ISO 4217 code for wage flows (local currency), else null
       _coverage_start  : earliest year available for this country in the response
       _coverage_end    : latest year available — may be earlier than end_year if
                          ILOSTAT has not yet published data for recent years
-      _breaks          : methodology breaks ({year, source_before, source_after});
-                         empty if none
+      _breaks          : methodology breaks ({year, source_before, source_after,
+                         reasons}); empty if none
       _missing_years   : years in the requested range with no observation (gaps)
       _no_data_reason  : plain-English explanation when the country has no data
 
@@ -128,87 +35,19 @@ def get_time_series(
     age_group: 'total' (default, adults 15+) or 'youth' (15-29); ignored
     for wage flows.
     """
-    from ilostat_mcp.indicators import is_modelled
+    validation.validate_dataflow(dataflow_id)
+    validation.validate_age_group(age_group)
+    validation.validate_year_range(start_year, end_year, dataflow_id, strict=False)
+    validation.validate_country(country)
 
-    t0 = time.perf_counter()
-    with _tracer.start_as_current_span("tool.get_time_series") as span:
-        span.set_attribute("dataflow_id", dataflow_id)
-        span.set_attribute("country", country)
-        span.set_attribute("start_year", start_year)
-        span.set_attribute("end_year", end_year)
-        span.set_attribute("age_group", age_group)
-        try:
-            _validate_dataflow(dataflow_id)
-            _validate_age_group(age_group)
-            _validate_year("start_year", start_year, dataflow_id)
-            _validate_year("end_year", end_year, dataflow_id)
-            if start_year > end_year:
-                raise ValueError(
-                    f"start_year must be <= end_year (got {start_year} to {end_year})"
-                )
-            _validate_country(country)
-            df = _fetch_df(dataflow_id, country, start_year, end_year, age_group)
-            detected_breaks: list[dict[str, object]] = breaks.detect_breaks(df)
-            if df.empty:
-                no_data_reason = f"No data available for {country} in {dataflow_id}."
-                if age_group == "youth":
-                    no_data_reason += (
-                        " This flow may not have youth age codes for this country."
-                        " Use search_indicators('youth unemployment') to find a"
-                        " youth-specific dataflow."
-                    )
-                result: list[dict[str, object]] = [
-                    {
-                        "_dataflow_id": dataflow_id,
-                        "_is_modelled": is_modelled(dataflow_id),
-                        "_unit_measure": None,
-                        "_currency_code": _currency_for(dataflow_id, country),
-                        "_coverage_start": None,
-                        "_coverage_end": None,
-                        "_breaks": detected_breaks,
-                        "_missing_years": [],
-                        "_no_data_reason": no_data_reason,
-                    }
-                ]
-            else:
-                missing = _detect_gaps(df, start_year, end_year)
-                rows = cast(list[dict[str, object]], df.to_dict(orient="records"))
-                meta: dict[str, object] = {
-                    "_dataflow_id": dataflow_id,
-                    "_is_modelled": is_modelled(dataflow_id),
-                    "_unit_measure": _extract_unit(df),
-                    "_currency_code": _currency_for(dataflow_id, country),
-                    "_coverage_start": str(df["time_period"].min()),
-                    "_coverage_end": str(df["time_period"].max()),
-                    "_breaks": detected_breaks,
-                    "_missing_years": missing,
-                    "_no_data_reason": None,
-                }
-                result = [meta, *rows]
-            outcome = (
-                "empty"
-                if len(result) == 1 and result[0].get("_no_data_reason")
-                else "success"
-            )
-            span.set_attribute("outcome", outcome)
-            logger.info(
-                "tool",
-                tool="get_time_series",
-                dataflow_id=dataflow_id,
-                country=country,
-                outcome=outcome,
-                duration_ms=int((time.perf_counter() - t0) * 1000),
-            )
-            return result
-        except (ValueError, RuntimeError) as exc:
-            span.set_attribute("outcome", "error")
-            span.set_attribute("error.message", str(exc))
-            logger.info(
-                "tool",
-                tool="get_time_series",
-                dataflow_id=dataflow_id,
-                country=country,
-                outcome="error",
-                duration_ms=int((time.perf_counter() - t0) * 1000),
-            )
-            raise
+    df = series.fetch_series(dataflow_id, country, start_year, end_year, age_group)
+    meta = series.series_meta(
+        df,
+        dataflow_id,
+        country,
+        age_group,
+        breaks.detect_breaks(df),
+        series.missing_years(df, start_year, end_year),
+    )
+    rows = cast(list[dict[str, object]], df.to_dict(orient="records"))
+    return [meta, *rows]
