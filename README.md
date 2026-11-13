@@ -10,7 +10,7 @@ Setup takes about five minutes and is done once. You don't need to know how to c
 
 ### Step 1 — Install uv (one time)
 
-[uv](https://docs.astral.sh/uv/) is a small, free tool that downloads and runs ilostat-mcp for Claude. You install it once; after that, it fetches ilostat-mcp automatically.
+[uv](https://docs.astral.sh/uv/) is a small, free tool that Claude Desktop uses to run ilostat-mcp. Installing uv does **not** install ilostat-mcp yet — that happens in Step 2.
 
 - **Mac:** open the **Terminal** app (press Cmd+Space, type "Terminal", press Enter), paste this line and press Enter:
   ```bash
@@ -21,9 +21,11 @@ Setup takes about five minutes and is done once. You don't need to know how to c
   powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
   ```
 
-When it finishes, close the window. You don't need to install Python or ilostat-mcp yourself — uv handles both.
+When it finishes, close the window.
 
 ### Step 2 — Add ilostat-mcp to Claude Desktop
+
+This step tells Claude Desktop to use ilostat-mcp. There is nothing to download by hand: the next time Claude Desktop starts, uv downloads ilostat-mcp (and Python, if your computer doesn't have it) automatically.
 
 1. In Claude Desktop, open **Settings → Desktop app**, scroll down to **Extensions**, click **Manage**, then **Edit Config**. This opens a file called `claude_desktop_config.json`.
 2. Open that file in a text editor (TextEdit on Mac, Notepad on Windows).
