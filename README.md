@@ -6,30 +6,60 @@ MCP server that gives AI assistants such as Claude live access to [ILOSTAT](http
 
 ## Installation
 
-Requires [uv](https://docs.astral.sh/uv/getting-started/installation/). Add this to your MCP client config. For Claude Desktop, edit `claude_desktop_config.json` (on macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`):
+Setup takes about five minutes and is done once. You don't need to know how to code.
 
-```json
-{
-  "mcpServers": {
-    "ilostat-mcp": {
-      "command": "uvx",
-      "args": ["ilostat-mcp"]
-    }
-  }
-}
-```
+### Step 1 — Install uv (one time)
 
-Quit and reopen Claude Desktop. `uvx` downloads the package from PyPI and runs it — no separate install step.
+[uv](https://docs.astral.sh/uv/) is a small, free tool that downloads and runs ilostat-mcp for Claude. You install it once; after that, it fetches ilostat-mcp automatically.
 
-If Claude Desktop reports that `uvx` cannot be found, replace `"uvx"` with its full path (run `which uvx` on macOS/Linux or `where uvx` on Windows). Desktop apps do not always see the same PATH as your terminal.
+- **Mac:** open the **Terminal** app (press Cmd+Space, type "Terminal", press Enter), paste this line and press Enter:
+  ```bash
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+  ```
+- **Windows:** open **PowerShell** (Start menu → type "PowerShell"), paste this line and press Enter:
+  ```powershell
+  powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+  ```
 
-### Alternative — pip
+When it finishes, close the window. You don't need to install Python or ilostat-mcp yourself — uv handles both.
 
-```bash
-pip install ilostat-mcp
-```
+### Step 2 — Add ilostat-mcp to Claude Desktop
 
-Then use `"command": "ilostat-mcp"` (no `args`) in the config above.
+1. In Claude Desktop, open **Settings → Desktop app**, scroll down to **Extensions**, click **Manage**, then **Edit Config**. This opens a file called `claude_desktop_config.json`.
+2. Open that file in a text editor (TextEdit on Mac, Notepad on Windows).
+3. **If the file is empty or only contains `{}`**, replace everything with:
+   ```json
+   {
+     "mcpServers": {
+       "ilostat-mcp": {
+         "command": "uvx",
+         "args": ["ilostat-mcp"]
+       }
+     }
+   }
+   ```
+   **If the file already has text in it**, don't delete anything. Look for `"mcpServers": {` and add the `"ilostat-mcp": { ... }` block inside it, with a comma between it and any entry before or after it. If there is no `"mcpServers"` yet, add the whole `"mcpServers": { ... }` section just after the first `{`, followed by a comma.
+4. Save the file.
+
+### Step 3 — Restart Claude Desktop
+
+Quit Claude Desktop completely (Mac: Cmd+Q; Windows: right-click the Claude icon in the system tray → Quit), then open it again. Closing the window is not enough.
+
+The first start can take a minute while uv downloads ilostat-mcp. To check it worked, go to **Settings → Customize → Connectors** — **ilostat-mcp** should be listed. Then try one of the questions below.
+
+### If it doesn't work
+
+- **Claude says it can't find `uvx`, or ilostat-mcp doesn't appear:** Claude Desktop sometimes can't find uv on its own. Give it the full location instead:
+  1. Mac: in Terminal, run `which uvx`. Windows: in PowerShell, run `where.exe uvx`.
+  2. Copy the line it prints (for example `/Users/yourname/.local/bin/uvx`).
+  3. In the config file, replace `"uvx"` with that location in quotes. On Windows, double every backslash — `C:\Users\yourname\.local\bin\uvx.exe`.
+  4. Save and restart Claude Desktop again.
+- **It showed an error the very first time:** the first download may have taken too long. Restart Claude Desktop once more.
+- **Claude Desktop says the config file is invalid:** a comma or bracket is usually missing or extra. Paste the file's contents into [jsonlint.com](https://jsonlint.com/) to find the mistake.
+
+### For developers
+
+`pip install ilostat-mcp` installs an `ilostat-mcp` command; use `"command": "ilostat-mcp"` (no `args`) in any MCP client config.
 
 ## Try asking
 
