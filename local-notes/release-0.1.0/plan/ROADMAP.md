@@ -378,12 +378,27 @@ Execution notes: `execution/phase05/`
 
 ### Phase 6 — Polish + publish
 
-**Goal:** Repo public-ready; showcase assets drafted.
+**Goal:** Repo public-ready; showcase assets drafted; server live on the internet.
 
 Outputs:
-- `README.md` with benchmark results table
-- `smithery.yaml`
-- PyPI publish
+
+**6a — Remote hosting (Fly.io)**
+- `fly.toml` + `Dockerfile` — Fly.io deployment config
+- FastMCP HTTP/SSE transport wired alongside existing stdio (both work; stdio for
+  local installs, HTTP for remote). No behavior change to tools or tests.
+- Environment variables set on Fly.io: `HONEYCOMB_API_KEY` (optional; OTel fails
+  silently when absent, so the server runs fine without it)
+- Server live at a stable URL (e.g. `https://ilostat-mcp.fly.dev`)
+- Optional: CD workflow in GitHub Actions to redeploy on version tag push
+
+**6b — Distribution**
+- `smithery.yaml` — remote URL as primary transport; stdio as fallback for local
+  installs. Smithery generates `npx @smithery/cli install ilostat-mcp` for users.
+- PyPI publish — configure Trusted Publishing on PyPI, push `v0.1.0` tag
+- `README.md` — two install paths: (1) Smithery one-liner, (2) manual `uvx` + JSON
+  config. Includes benchmark results table.
+
+**6c — Showcase**
 - Article draft (TDS/Dev.to)
 
 Execution notes: `execution/phase06/`

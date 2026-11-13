@@ -1,7 +1,7 @@
 name: Publish to PyPI
 
-# Triggered by pushing a version tag to the public repo (e.g. git tag v1.0.0).
-# Full configuration (PyPI project registration, trusted publishing) is done in Phase 6.
+# Triggered by pushing a version tag to the public repo (e.g. git push public v0.1.1).
+# PyPI trusts only the public repo's publish.yml, so tags pushed to the private repo fail here.
 on:
   push:
     tags:
@@ -24,10 +24,17 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
+      - name: Check tag matches package version
+        run: |
+          PKG_VERSION=$(grep -m1 '^version = ' pyproject.toml | cut -d'"' -f2)
+          if [ "${GITHUB_REF_NAME}" != "v${PKG_VERSION}" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match pyproject.toml version ${PKG_VERSION}. Bump the version or fix the tag."
+            exit 1
+          fi
+
       - name: Build
         run: uv build
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         # No API token needed — uses Trusted Publishing (OIDC).
-        # Configure the PyPI project to trust this workflow in Phase 6.

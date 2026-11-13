@@ -4,44 +4,30 @@ MCP server giving AI agents access to ILOSTAT employment and wage data, with aut
 
 ## Installation
 
-### Option 1 — directly from GitHub (no manual install)
-
-Add this to your MCP client config. For Claude Desktop, edit `claude_desktop_config.json`:
+Requires [uv](https://docs.astral.sh/uv/getting-started/installation/). Add this to your MCP client config. For Claude Desktop, edit `claude_desktop_config.json` (Settings → Developer → Edit Config):
 
 ```json
 {
   "mcpServers": {
     "ilostat-mcp": {
       "command": "uvx",
-      "args": ["--from", "git+https://github.com/mrakelinggar/ilostat-mcp", "ilostat-mcp"]
+      "args": ["ilostat-mcp"]
     }
   }
 }
 ```
 
-`uvx` fetches and installs the package from GitHub automatically. Restart Claude Desktop after editing the config.
+Restart Claude Desktop. `uvx` downloads the package from PyPI and runs it — no separate install step. Confirm **ilostat-mcp** appears in the tools panel before running queries.
 
-### Option 2 — install from source
+If Claude Desktop reports that `uvx` cannot be found, replace `"uvx"` with its full path (run `which uvx` on macOS/Linux or `where uvx` on Windows). Desktop apps do not always see the same PATH as your terminal.
+
+### Alternative — pip
 
 ```bash
-git clone https://github.com/mrakelinggar/ilostat-mcp
-cd ilostat-mcp
-pip install .
+pip install ilostat-mcp
 ```
 
-This installs an `ilostat-mcp` command into your Python environment. Then add it to your config:
-
-```json
-{
-  "mcpServers": {
-    "ilostat-mcp": {
-      "command": "ilostat-mcp"
-    }
-  }
-}
-```
-
-Restart Claude Desktop after editing the config. Confirm **ilostat-mcp** appears in the tools panel before running queries.
+Then use `"command": "ilostat-mcp"` (no `args`) in the config above.
 
 ## Tools
 
@@ -75,7 +61,7 @@ Everything comes from ILOSTAT's live SDMX API and is kept in memory for up to 24
 
 ## Benchmark
 
-A hallucination benchmark comparing bare-LLM vs. MCP-equipped agent answers across 30+ questions with ground truth pulled from the live ILOSTAT API. Results in [`benchmark/`](benchmark/).
+A hallucination benchmark comparing bare-LLM vs. MCP-equipped agent answers across 30+ questions with ground truth pulled from the live ILOSTAT API. Results in [`benchmark/`](https://github.com/mrakelinggar/ilostat-mcp/tree/main/benchmark).
 
 ## Development
 
@@ -89,6 +75,10 @@ uv run mypy src/                    # type check
 
 CI runs on every push: lint → type check → tests.
 
+## Acknowledgements
+
+Benchmark ground truth verified against live ILOSTAT data by Kanza Nabeela Puteri.
+
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — see [LICENSE](https://github.com/mrakelinggar/ilostat-mcp/blob/main/LICENSE).

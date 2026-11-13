@@ -2,6 +2,32 @@
 
 ---
 
+## 2026-11-13 — v0.1.0 released to PyPI
+
+Decided to ship local installs only: PyPI, installed with `uvx ilostat-mcp`.
+Fly.io hosting, the `.mcpb` Claude Desktop bundle and the MCP Registry listing
+are deferred.
+
+- **Smithery dropped.** Smithery closed its publishing services on 2026-10-31
+  (smithery.ai/future). It is now a curated directory of internet-hosted servers
+  only, so a package people install locally cannot be listed. `smithery.yaml` is
+  no longer planned.
+- **Private files kept out of the PyPI source archive.** The archive was built
+  from whatever branch was checked out, and on main it included CLAUDE.md,
+  local-notes/ and the benchmark results. `pyproject.toml` now lists exactly what
+  may go in.
+- **publish.yml** now fails early if the git tag doesn't match the version in
+  `pyproject.toml`.
+- Author on PyPI: Rake Anggoro. README credits Kanza Nabeela Puteri for
+  benchmark ground truth (Acknowledgements).
+- Public repo `main` now requires a PR, except for the owner.
+
+**Release steps from now on:** bump the version, run `uv lock`, commit, push to
+origin, do the publish-branch procedure, then `git tag vX.Y.Z && git push public
+vX.Y.Z`. Push tags to `public` only.
+
+---
+
 ## 2026-11-07 — Code review, break-detection fix, refactor
 
 Reviewed the whole codebase for bugs, duplication and the open/closed

@@ -171,7 +171,7 @@ to a future version when the MCP has real traffic to aggregate.
 | Data domain | ILOSTAT only, **employment + wages** themes for v1 (not the full ILOSTAT catalog) |
 | Analytical depth | Derived stats: YoY change, CAGR, trend. Not pure pass-through, not full statistical modeling. |
 | Data storage | In-process memory cache only — no disk, no database, lost on restart (decided 2026-11-07; ILOSTAT data changes rarely — 1,107 of 1,215 flows were last refreshed in one October 2026 batch). Catalogue + countries: 24 h. Series: full history per (flow, country, age group), 24 h, "no data" 1 h, LRU cap 500; keyed on the flow's LAST_UPDATE when the catalogue is in memory. Failures never cached. |
-| Distribution | Local install via `pip`/`uvx`, no hosted remote server for v1 |
+| Distribution | PyPI (`pip`/`uvx`) for local installs **+** remote server hosted on Fly.io (free tier). Both transports supported: stdio for local, HTTP/SSE for remote. No OAuth for v1 — ILOSTAT is a public API requiring no user credentials. |
 | Verbosity/reasoning exposure | Rely on the MCP client's native tool-call panel (Claude Desktop, etc.). No custom `explain` flag or server-side reasoning field — deferred to v2 if ever. |
 | Structured logging | `structlog` — JSON output, never bare `print()` or stdlib `logging` with plain-text formatter |
 | Distributed tracing | OpenTelemetry SDK → Honeycomb (free tier). No Jaeger, no other backend. Exporter fails silently offline. |
