@@ -4,7 +4,9 @@ Observability setup for ilostat-mcp.
 Call configure() once in main() before mcp.run().
 
 After configure():
-  - structlog.get_logger() returns a bound logger emitting JSON to stdout
+  - structlog.get_logger() returns a bound logger emitting JSON to stderr.
+    Never stdout: on the stdio transport stdout carries the MCP protocol
+    itself, and the spec forbids writing anything else there.
   - get_tracer(__name__) returns an OTel Tracer; spans go to Honeycomb if
     HONEYCOMB_API_KEY is set, otherwise discarded silently.
 
@@ -15,6 +17,7 @@ drops spans silently after its timeout — the MCP keeps running normally.
 
 import logging
 import os
+import sys
 
 import structlog
 from opentelemetry import trace
@@ -32,7 +35,7 @@ def _configure_structlog() -> None:
             structlog.processors.JSONRenderer(),
         ],
         wrapper_class=structlog.make_filtering_bound_logger(logging.DEBUG),
-        logger_factory=structlog.PrintLoggerFactory(),
+        logger_factory=structlog.PrintLoggerFactory(file=sys.stderr),
         cache_logger_on_first_use=True,
     )
 

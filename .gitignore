@@ -10,3 +10,7 @@ dist/
 .env.*
 .mcp.json
 .claude/
+
+# Private — tracked on main (private repo) only
+CLAUDE.md
+local-notes/

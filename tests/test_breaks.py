@@ -3,8 +3,11 @@ Break detection tests — verified against real ILOSTAT data.
 
 Break countries and expected years (confirmed against live data, not just Phase 0b):
 - NGA (DF_UNE_3EAP_SEX_AGE_DSB_RT): break at 2019 (HS -> HIES).
-  Flow uses youth age bands — AGE_YTHADULT_YGE15 returns no data.
+  Youth-only flow (no adult total); queried with age_group="youth".
   Series starts at 2011 so no pre-2011 comparison exists.
+- AUS unemployment (DF_UNE_DEAP_SEX_AGE_RT): ILOSTAT flags a break at 2018
+  (obs_status "B") with the same source name either side — a survey redesign
+  the old source-only check missed (Phase 5 finding).
 - THA wages (DF_EAR_CMTA_SEX_CUR_NB): break at 2014 (2013=HIES, 2014+=LFS).
   One SOURCE transition → one break year.
 - DEU unemployment: no breaks (LFS throughout).
@@ -13,9 +16,15 @@ Break countries and expected years (confirmed against live data, not just Phase 
 import pandas as pd
 import pytest
 
-from ilostat_mcp.breaks import break_years_in_range, detect_breaks
+from ilostat_mcp.breaks import (
+    REASON_ILOSTAT_FLAG,
+    REASON_SOURCE_CHANGE,
+    break_warning,
+    detect_breaks,
+)
 from ilostat_mcp.indicators import CUR_DEFAULT
 from ilostat_mcp.sdmx_client import get_time_series
+from ilostat_mcp.tools.series import fetch_series
 
 _NGA_FLOW = "DF_UNE_3EAP_SEX_AGE_DSB_RT"
 _THA_WAGE_FLOW = "DF_EAR_CMTA_SEX_CUR_NB"
@@ -111,21 +120,121 @@ class TestDetectBreaksUnit:
         assert result[1]["year"] == "2022"
 
 
-class TestBreakYearsInRange:
-    def test_all_breaks_in_range(self) -> None:
-        b = [{"year": "2013"}, {"year": "2016"}]
-        assert break_years_in_range(b, "2010", "2020") == ["2013", "2016"]  # type: ignore[arg-type]
+class TestDetectBreaksSignals:
+    """ILOSTAT's "B" flag and source changes each record a break (Phase 5)."""
 
-    def test_break_outside_range_excluded(self) -> None:
-        b = [{"year": "2009"}, {"year": "2013"}, {"year": "2025"}]
-        assert break_years_in_range(b, "2010", "2020") == ["2013"]  # type: ignore[arg-type]
+    def test_ilostat_flag_with_same_source_detected(self) -> None:
+        # Survey redesign that kept its name: only the "B" flag shows it.
+        df = pd.DataFrame(
+            {
+                "time_period": ["2017", "2018"],
+                "source": ["LFS", "LFS"],
+                "obs_status": ["", "B"],
+            }
+        )
+        assert detect_breaks(df) == [
+            {
+                "year": "2018",
+                "source_before": "LFS",
+                "source_after": "LFS",
+                "reasons": [REASON_ILOSTAT_FLAG],
+            }
+        ]
+
+    def test_source_change_without_flag_has_source_reason_only(self) -> None:
+        df = pd.DataFrame(
+            {
+                "time_period": ["2012", "2013"],
+                "source": ["PC", "LFS"],
+                "obs_status": ["", ""],
+            }
+        )
+        assert detect_breaks(df)[0]["reasons"] == [REASON_SOURCE_CHANGE]
+
+    def test_flag_and_source_change_give_both_reasons(self) -> None:
+        df = pd.DataFrame(
+            {
+                "time_period": ["2012", "2013"],
+                "source": ["PC", "LFS"],
+                "obs_status": ["", "B"],
+            }
+        )
+        result = detect_breaks(df)
+        assert len(result) == 1
+        assert result[0]["reasons"] == [REASON_ILOSTAT_FLAG, REASON_SOURCE_CHANGE]
+
+    def test_flag_on_first_year_has_no_source_before(self) -> None:
+        df = pd.DataFrame(
+            {
+                "time_period": ["2011", "2012"],
+                "source": ["HS", "HS"],
+                "obs_status": ["B", ""],
+            }
+        )
+        result = detect_breaks(df)
+        assert result[0]["year"] == "2011"
+        assert result[0]["source_before"] is None
+
+    def test_works_without_source_column(self) -> None:
+        df = pd.DataFrame({"time_period": ["2020", "2021"], "obs_status": ["", "B"]})
+        assert [b["year"] for b in detect_breaks(df)] == ["2021"]
+
+    def test_blank_source_year_bridged_to_last_known(self) -> None:
+        # LFS, blank, HIES: one real change (at 2022), not two false ones.
+        df = pd.DataFrame(
+            {"time_period": ["2020", "2021", "2022"], "source": ["LFS", None, "HIES"]}
+        )
+        result = detect_breaks(df)
+        assert len(result) == 1
+        assert result[0]["year"] == "2022"
+        assert result[0]["source_before"] == "LFS"
+
+    def test_blank_source_between_same_sources_is_not_a_break(self) -> None:
+        df = pd.DataFrame(
+            {"time_period": ["2020", "2021", "2022"], "source": ["LFS", "", "LFS"]}
+        )
+        assert detect_breaks(df) == []
+
+
+_SAMPLE_BREAKS: list[dict[str, object]] = [
+    {
+        "year": "2013",
+        "source_before": "PC",
+        "source_after": "LFS",
+        "reasons": [REASON_SOURCE_CHANGE],
+    },
+    {
+        "year": "2018",
+        "source_before": "LFS",
+        "source_after": "LFS",
+        "reasons": [REASON_ILOSTAT_FLAG],
+    },
+]
+
+
+class TestBreakWarning:
+    def test_no_break_in_range_returns_none(self) -> None:
+        assert break_warning(_SAMPLE_BREAKS, "2019", "2022") is None
+
+    def test_empty_breaks_returns_none(self) -> None:
+        assert break_warning([], "2010", "2020") is None
+
+    def test_single_break_names_year_and_source_change(self) -> None:
+        warning = break_warning(_SAMPLE_BREAKS, "2010", "2015")
+        assert warning is not None
+        assert "Methodology break within 2010-2015 at 2013" in warning
+        assert "source changed from 'PC' to 'LFS'" in warning
+
+    def test_flag_only_break_says_ilostat_flagged_it(self) -> None:
+        warning = break_warning(_SAMPLE_BREAKS, "2016", "2020")
+        assert warning is not None
+        assert "2018 (ILOSTAT flags a break in series)" in warning
 
     def test_boundary_years_included(self) -> None:
-        b = [{"year": "2010"}, {"year": "2020"}]
-        assert break_years_in_range(b, "2010", "2020") == ["2010", "2020"]  # type: ignore[arg-type]
-
-    def test_empty_breaks_returns_empty(self) -> None:
-        assert break_years_in_range([], "2010", "2020") == []
+        warning = break_warning(_SAMPLE_BREAKS, "2013", "2018")
+        assert warning is not None
+        assert "Methodology breaks" in warning
+        assert "2013" in warning and "2018" in warning
 
 
 # ── Integration tests (live ILOSTAT API) ─────────────────────────────────────
@@ -135,8 +244,8 @@ class TestDetectBreaksLive:
     @pytest.mark.timeout(30)
     def test_nga_unemployment_break_at_2019(self) -> None:
         # NGA series starts at 2011 (HS), jumps to 2019 (HIES) — one break at 2019.
-        # No age filter: this flow uses youth bands, not AGE_YTHADULT_YGE15.
-        df = get_time_series(_NGA_FLOW, "NGA", "2005", "2022")
+        # Youth-only flow, so it is queried with age_group="youth".
+        df = fetch_series(_NGA_FLOW, "NGA", "2011", "2022", "youth")
         result = detect_breaks(df)
         years = [b["year"] for b in result]
         assert "2019" in years, f"Expected break at 2019; got {years}"
@@ -144,26 +253,39 @@ class TestDetectBreaksLive:
     @pytest.mark.timeout(30)
     def test_tha_wage_break_at_2014(self) -> None:
         # 2013=HIES, 2014+=LFS: one SOURCE transition → break attributed to 2014.
-        df = get_time_series(_THA_WAGE_FLOW, "THA", "2010", "2020", cur=CUR_DEFAULT)
+        df = get_time_series(
+            _THA_WAGE_FLOW, "THA", "2010", "2020", dims={"CUR": CUR_DEFAULT}
+        )
         result = detect_breaks(df)
         years = [b["year"] for b in result]
         assert "2014" in years, f"Expected break at 2014; got {years}"
 
     @pytest.mark.timeout(30)
+    def test_aus_ilostat_flagged_break_at_2018_detected(self) -> None:
+        # Same source name either side; only ILOSTAT's "B" flag reveals it.
+        df = fetch_series(_UNE_FLOW, "AUS", "2015", "2020", "total")
+        flagged = [b for b in detect_breaks(df) if b["year"] == "2018"]
+        assert flagged, "Expected ILOSTAT-flagged break at 2018 for AUS"
+        assert REASON_ILOSTAT_FLAG in flagged[0]["reasons"]  # type: ignore[operator]
+        assert flagged[0]["source_before"] == flagged[0]["source_after"]
+
+    @pytest.mark.timeout(30)
     def test_deu_unemployment_no_breaks(self) -> None:
         from ilostat_mcp.indicators import AGE_TOTAL
 
-        df = get_time_series(_UNE_FLOW, "DEU", "2010", "2023", age=AGE_TOTAL)
+        df = get_time_series(_UNE_FLOW, "DEU", "2010", "2023", dims={"AGE": AGE_TOTAL})
         result = detect_breaks(df)
         assert result == [], f"Expected no breaks for DEU; got {result}"
 
     @pytest.mark.timeout(30)
     def test_break_dict_has_required_keys(self) -> None:
-        df = get_time_series(_THA_WAGE_FLOW, "THA", "2010", "2020", cur=CUR_DEFAULT)
+        df = get_time_series(
+            _THA_WAGE_FLOW, "THA", "2010", "2020", dims={"CUR": CUR_DEFAULT}
+        )
         result = detect_breaks(df)
         assert len(result) > 0
         for b in result:
-            assert {"year", "source_before", "source_after"} <= set(b)
+            assert {"year", "source_before", "source_after", "reasons"} <= set(b)
 
 
 class TestGetTimeSeriesBreakField:

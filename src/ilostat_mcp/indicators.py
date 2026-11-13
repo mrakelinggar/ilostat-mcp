@@ -1,70 +1,125 @@
 """
-Registry mapping theme names to canonical ILOSTAT dataflow IDs.
+Registry of the ILOSTAT dataflows this server accepts, and how to query each.
 
-Adding a new theme = adding entries here only — nothing else changes.
+Adding a flow = adding one FlowSpec entry to FLOW_SPECS — nothing else changes.
 """
 
-# Canonical flows for the four v1 labor market themes.
-# Each value is the ILOSTAT SDMX dataflow ID that best covers the theme
-# for a general (all-employee, economy-wide, total sex, adult age) query.
-FLOWS: dict[str, str] = {
-    "unemployment_rate": "DF_UNE_DEAP_SEX_AGE_RT",
-    "employment_to_pop": "DF_EMP_DWAP_SEX_AGE_RT",
-    "wages": "DF_EAR_EMTA_SEX_CUR_NB",
-    "lfpr": "DF_EAP_DWAP_SEX_AGE_RT",
-}
+from collections.abc import Mapping
+from dataclasses import dataclass, field
+from types import MappingProxyType
+from typing import Literal
 
-# Which dimensions each flow uses, plus any extra SDMX key values required.
-#
-# Each entry: {"dim": "age"|"cur"|None, **extra_sdmx_key_values}
-# - "dim": the primary variable dimension — "age" injects AGE, "cur" injects CUR,
-#   None means no extra dimension key is injected (e.g. flows whose AGE codes
-#   don't include the standard AGE_YTHADULT_YGE15 total).
-# - Extra keys (e.g. "GEO"): included verbatim in the SDMX key dict every call.
-#   Required when a flow has an additional mandatory dimension beyond REF_AREA/SEX.
-#
-# Discovery result (Phase 2b Task 0): DF_UNE_3EAP_SEX_AGE_GEO_RT returns
-# national + rural + urban rows when GEO is omitted. GEO_COV_NAT = national total.
-#
-# Discovery result (Phase 4.5): DF_UNE_3EAP_SEX_AGE_DSB_RT does not contain
-# AGE_YTHADULT_YGE15 — passing it gives 404. dim=None so no AGE key is injected.
-FLOW_DIMS: dict[str, dict[str, str | None]] = {
-    # Canonical v1 flows
-    "DF_UNE_DEAP_SEX_AGE_RT": {"dim": "age"},
-    "DF_EMP_DWAP_SEX_AGE_RT": {"dim": "age"},
-    "DF_EAR_EMTA_SEX_CUR_NB": {"dim": "cur"},
-    "DF_EAP_DWAP_SEX_AGE_RT": {"dim": "age"},
-    # Phase 2b additions — benchmark flows not in the canonical set
-    # dim=None: AGE_YTHADULT_YGE15 not in this flow's AGE codelist (Phase 4.5)
-    "DF_UNE_3EAP_SEX_AGE_DSB_RT": {"dim": None},  # Nigeria unemployment (q003, q018)
-    # GEO_COV_NAT = national total; omitting GEO returns national+rural+urban mixed
-    "DF_UNE_3EAP_SEX_AGE_GEO_RT": {  # ZAF youth unemployment (q016)
-        "dim": "age",
-        "GEO": "GEO_COV_NAT",
-    },
-    "DF_EMP_2WAP_SEX_AGE_RT": {"dim": "age"},  # modelled emp-to-pop (q013)
-    "DF_EAR_CMTA_SEX_CUR_NB": {"dim": "cur"},  # care-sector wages (q004)
-}
+# ── SDMX dimension values ─────────────────────────────────────────────────────
 
-# Earliest year any country has data in each flow, from Phase 4.5 API discovery.
-# Used to validate year inputs before making API calls.
-# Upper bound is always the current calendar year (computed at runtime in server.py).
-FLOW_MIN_YEARS: dict[str, int] = {
-    "DF_UNE_DEAP_SEX_AGE_RT": 1983,
-    "DF_EMP_DWAP_SEX_AGE_RT": 1983,
-    "DF_EAR_EMTA_SEX_CUR_NB": 2000,
-    "DF_EAP_DWAP_SEX_AGE_RT": 1983,
-    "DF_UNE_3EAP_SEX_AGE_DSB_RT": 2011,
-    "DF_UNE_3EAP_SEX_AGE_GEO_RT": 2008,
-    "DF_EMP_2WAP_SEX_AGE_RT": 1991,
-    "DF_EAR_CMTA_SEX_CUR_NB": 2000,  # ZAF goes back to 2000; THA starts 2013
-}
-
-# Default dimension values
 AGE_TOTAL = "AGE_YTHADULT_YGE15"  # adults 15+
 AGE_YOUTH = "AGE_YTHBANDS_Y15-29"  # youth 15-29 (ILO standard youth band)
 SEX_TOTAL = "SEX_T"  # total (all sexes)
 CUR_DEFAULT = "CUR_TYPE_LCU"  # local currency units
+GEO_NATIONAL = "GEO_COV_NAT"  # national total (vs. rural / urban)
+DSB_TOTAL = "DSB_STATUS_TOTAL"  # total (with and without disability)
+
+# Maps the age_group tool parameter to the SDMX AGE code.
+AGE_GROUP_CODES: Mapping[str, str] = MappingProxyType(
+    {
+        "total": AGE_TOTAL,
+        "youth": AGE_YOUTH,
+    }
+)
+
+# The flow's main variable dimension: "age" means the caller's age_group picks
+# the AGE code; "cur" means wages, always queried in local currency.
+VariableDim = Literal["age", "cur"]
+
+
+@dataclass(frozen=True)
+class FlowSpec:
+    """
+    How to query one ILOSTAT dataflow.
+
+    Attributes
+    ----------
+    min_year  : earliest year any country has data (Phase 4.5 discovery); used
+                to reject impossible years before calling the API.
+    dim       : the flow's main variable dimension (see VariableDim).
+    fixed_key : extra SDMX key values sent on every call. Needed when a flow
+                has a breakdown that would otherwise return several rows per
+                year (e.g. rural/urban, disability status).
+    theme     : canonical v1 theme name, for the four headline flows only.
+    title     : official ILOSTAT title, for the four headline flows only.
+    """
+
+    min_year: int
+    dim: VariableDim
+    fixed_key: Mapping[str, str] = field(default_factory=dict)
+    theme: str | None = None
+    title: str | None = None
+
+    def sdmx_key(self, age_group: str) -> dict[str, str]:
+        """
+        Return the dimension values to send for this flow, beyond REF_AREA/SEX.
+
+        age_group must be a key of AGE_GROUP_CODES; it is ignored for wage
+        flows (dim == "cur").
+        """
+        key = dict(self.fixed_key)
+        if self.dim == "age":
+            key["AGE"] = AGE_GROUP_CODES[age_group]
+        else:
+            key["CUR"] = CUR_DEFAULT
+        return key
+
+
+FLOW_SPECS: Mapping[str, FlowSpec] = MappingProxyType(
+    {
+        # ── Canonical v1 flows ────────────────────────────────────────────────
+        "DF_UNE_DEAP_SEX_AGE_RT": FlowSpec(
+            min_year=1983,
+            dim="age",
+            theme="unemployment_rate",
+            title="Unemployment rate by sex and age",
+        ),
+        "DF_EMP_DWAP_SEX_AGE_RT": FlowSpec(
+            min_year=1983,
+            dim="age",
+            theme="employment_to_pop",
+            title="Employment-to-population ratio by sex and age",
+        ),
+        "DF_EAR_EMTA_SEX_CUR_NB": FlowSpec(
+            min_year=2000,
+            dim="cur",
+            theme="wages",
+            title="Average monthly earnings of employees by sex and currency",
+        ),
+        "DF_EAP_DWAP_SEX_AGE_RT": FlowSpec(
+            min_year=1983,
+            dim="age",
+            theme="lfpr",
+            title="Labour force participation rate by sex and age",
+        ),
+        # ── Benchmark flows outside the canonical set ─────────────────────────
+        # Youth-only flow split by disability status. It has no adult-total AGE
+        # code, so age_group="total" returns no data. Without the DSB key it
+        # returns 8-11 mixed rows per year (Phase 5 finding).
+        "DF_UNE_3EAP_SEX_AGE_DSB_RT": FlowSpec(
+            min_year=2011,
+            dim="age",
+            fixed_key={"DSB": DSB_TOTAL},
+        ),
+        # Without GEO this returns national + rural + urban rows mixed together.
+        "DF_UNE_3EAP_SEX_AGE_GEO_RT": FlowSpec(
+            min_year=2008,
+            dim="age",
+            fixed_key={"GEO": GEO_NATIONAL},
+        ),
+        "DF_EMP_2WAP_SEX_AGE_RT": FlowSpec(min_year=1991, dim="age"),  # modelled
+        "DF_EAR_CMTA_SEX_CUR_NB": FlowSpec(min_year=2000, dim="cur"),  # care sector
+    }
+)
+
+# Theme name -> dataflow ID for the four canonical flows.
+FLOWS: Mapping[str, str] = MappingProxyType(
+    {spec.theme: flow_id for flow_id, spec in FLOW_SPECS.items() if spec.theme}
+)
 
 # Keyword fragments that identify modelled/estimated flows (ILO modelled estimates).
 # A flow is "modelled" if its ID contains any of these strings.
@@ -80,47 +135,60 @@ def is_modelled(flow_id: str) -> bool:
 # ISO 4217 currency codes for countries most likely to appear in benchmark queries.
 # Coverage prioritises countries confirmed to have ILOSTAT data (Phase 0 finding).
 # Not exhaustive — extend here when new benchmark countries are added.
-COUNTRY_CURRENCY: dict[str, str] = {
-    # G20 members
-    "ARG": "ARS",
-    "AUS": "AUD",
-    "BRA": "BRL",
-    "CAN": "CAD",
-    "CHN": "CNY",
-    "DEU": "EUR",
-    "FRA": "EUR",
-    "GBR": "GBP",
-    "IDN": "IDR",
-    "IND": "INR",
-    "ITA": "EUR",
-    "JPN": "JPY",
-    "KOR": "KRW",
-    "MEX": "MXN",
-    "RUS": "RUB",
-    "SAU": "SAR",
-    "TUR": "TRY",
-    "USA": "USD",
-    "ZAF": "ZAR",
-    # Other common benchmark countries
-    "BGD": "BDT",
-    "CHL": "CLP",
-    "COL": "COP",
-    "ECU": "USD",
-    "EGY": "EGP",
-    "ETH": "ETB",
-    "GHA": "GHS",
-    "KEN": "KES",
-    "MAR": "MAD",
-    "MYS": "MYR",
-    "NGA": "NGN",
-    "PAK": "PKR",
-    "PHL": "PHP",
-    "POL": "PLN",
-    "SWE": "SEK",
-    "THA": "THB",
-    "TZA": "TZS",
-    "UGA": "UGX",
-    "UKR": "UAH",
-    "VEN": "VES",
-    "VNM": "VND",
-}
+COUNTRY_CURRENCY: Mapping[str, str] = MappingProxyType(
+    {
+        # G20 members
+        "ARG": "ARS",
+        "AUS": "AUD",
+        "BRA": "BRL",
+        "CAN": "CAD",
+        "CHN": "CNY",
+        "DEU": "EUR",
+        "FRA": "EUR",
+        "GBR": "GBP",
+        "IDN": "IDR",
+        "IND": "INR",
+        "ITA": "EUR",
+        "JPN": "JPY",
+        "KOR": "KRW",
+        "MEX": "MXN",
+        "RUS": "RUB",
+        "SAU": "SAR",
+        "TUR": "TRY",
+        "USA": "USD",
+        "ZAF": "ZAR",
+        # Other common benchmark countries
+        "BGD": "BDT",
+        "CHL": "CLP",
+        "COL": "COP",
+        "ECU": "USD",
+        "EGY": "EGP",
+        "ETH": "ETB",
+        "GHA": "GHS",
+        "KEN": "KES",
+        "MAR": "MAD",
+        "MYS": "MYR",
+        "NGA": "NGN",
+        "PAK": "PKR",
+        "PHL": "PHP",
+        "POL": "PLN",
+        "SWE": "SEK",
+        "THA": "THB",
+        "TZA": "TZS",
+        "UGA": "UGX",
+        "UKR": "UAH",
+        "VEN": "VES",
+        "VNM": "VND",
+    }
+)
+
+
+def currency_for(dataflow_id: str, country: str) -> str | None:
+    """
+    Return the ISO 4217 code for a wage flow's local currency, or None.
+
+    None for non-wage flows, and for countries not in COUNTRY_CURRENCY.
+    """
+    if FLOW_SPECS[dataflow_id].dim == "cur":
+        return COUNTRY_CURRENCY.get(country)
+    return None

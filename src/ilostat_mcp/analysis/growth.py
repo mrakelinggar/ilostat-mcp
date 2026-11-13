@@ -4,9 +4,17 @@ Derived statistics for ILOSTAT time series — pure math functions.
 All functions operate on a DataFrame with at minimum a `time_period` (str)
 column and a `value` (float) column, as returned by sdmx_client.get_time_series.
 They have no side effects and make no API calls.
+
+Rows with an empty value (ILOSTAT returns NaN for some unreliable or
+suppressed observations) are treated as missing years.
 """
 
 import pandas as pd
+
+
+def _with_values(df: pd.DataFrame) -> pd.DataFrame:
+    """Return df without rows whose value is missing."""
+    return df[df["value"].notna()]
 
 
 def yoy(df: pd.DataFrame, year: str) -> dict[str, object]:
@@ -14,8 +22,7 @@ def yoy(df: pd.DataFrame, year: str) -> dict[str, object]:
     Year-over-year percentage change for a given year.
 
     Compares the value at `year` to the value at `year - 1`. Both years must
-    exist in the DataFrame. Uses the first row for each year if the DataFrame
-    has multiple rows per year.
+    exist in the DataFrame, which must hold one row per year.
 
     Parameters
     ----------
@@ -34,6 +41,7 @@ def yoy(df: pd.DataFrame, year: str) -> dict[str, object]:
     """
     prev_year = str(int(year) - 1)
 
+    df = _with_values(df)
     year_rows = df[df["time_period"] == year]
     prev_rows = df[df["time_period"] == prev_year]
 
@@ -66,8 +74,8 @@ def cagr(df: pd.DataFrame, start_year: str, end_year: str) -> dict[str, object]:
     Compound annual growth rate between start_year and end_year (inclusive).
 
     CAGR = (end_value / start_value) ^ (1 / n_years) - 1, where
-    n_years = int(end_year) - int(start_year). Uses the first row for each
-    boundary year if the DataFrame has multiple rows per year.
+    n_years = int(end_year) - int(start_year). The DataFrame must hold one
+    row per year.
 
     Parameters
     ----------
@@ -92,6 +100,7 @@ def cagr(df: pd.DataFrame, start_year: str, end_year: str) -> dict[str, object]:
             f" (got {start_year!r} for both)."
         )
 
+    df = _with_values(df)
     start_rows = df[df["time_period"] == start_year]
     end_rows = df[df["time_period"] == end_year]
 
@@ -128,7 +137,7 @@ def trend(df: pd.DataFrame, start_year: str, end_year: str) -> dict[str, object]
     Ordinary-least-squares linear trend between start_year and end_year (inclusive).
 
     Regresses value on integer year for all data points in [start_year, end_year].
-    Uses the first row per year if the DataFrame has multiple rows per year.
+    The DataFrame must hold one row per year.
 
     Parameters
     ----------
@@ -147,6 +156,7 @@ def trend(df: pd.DataFrame, start_year: str, end_year: str) -> dict[str, object]
     ValueError if start_year or end_year is not found in the DataFrame.
     ValueError if fewer than 2 data points fall within the range.
     """
+    df = _with_values(df)
     mask = (df["time_period"] >= start_year) & (df["time_period"] <= end_year)
     subset = df[mask].copy()
 

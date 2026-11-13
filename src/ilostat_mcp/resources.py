@@ -1,48 +1,63 @@
 """
-System-prompt resource and module-level country cache.
+System-prompt resource and the reference-data caches.
 
-The countries cache avoids hitting the ILOSTAT API on every get_countries()
-call — it populates once per process and stays for the session.
+ILOSTAT's dataflow catalogue and country list change rarely, so each is
+fetched once and kept in memory for 24 hours (see cache.TTLCache). Observation
+data is cached separately, in tools/series.py.
 """
 
 from ilostat_mcp import sdmx_client
-from ilostat_mcp.indicators import FLOWS
+from ilostat_mcp.cache import SECONDS_PER_DAY, TTLCache
+from ilostat_mcp.indicators import FLOW_SPECS
+from ilostat_mcp.sdmx_client import FlowInfo
 
 # The four canonical flows for v1, exposed as a resource so the agent knows
-# which dataflow IDs to use for common themes without having to call search_indicators.
-# Titles are the official ILOSTAT names (verified against live API, Phase 0).
+# which dataflow IDs to use for common themes without calling search_indicators.
 CANONICAL_FLOWS: list[dict[str, str]] = [
-    {
-        "theme": "unemployment_rate",
-        "dataflow_id": FLOWS["unemployment_rate"],
-        "title": "Unemployment rate by sex and age",
-    },
-    {
-        "theme": "employment_to_pop",
-        "dataflow_id": FLOWS["employment_to_pop"],
-        "title": "Employment-to-population ratio by sex and age",
-    },
-    {
-        "theme": "wages",
-        "dataflow_id": FLOWS["wages"],
-        "title": "Average monthly earnings of employees by sex and currency",
-    },
-    {
-        "theme": "lfpr",
-        "dataflow_id": FLOWS["lfpr"],
-        "title": "Labour force participation rate by sex and age",
-    },
+    {"theme": spec.theme, "dataflow_id": flow_id, "title": spec.title}
+    for flow_id, spec in FLOW_SPECS.items()
+    if spec.theme and spec.title
 ]
 
-_countries_cache: list[dict[str, str]] | None = None
+# Each of these caches holds a single entry (the whole list), under _ALL.
+_ALL = "all"
+_catalogue: TTLCache[str, dict[str, FlowInfo]] = TTLCache(
+    ttl_seconds=SECONDS_PER_DAY, max_entries=1
+)
+_countries: TTLCache[str, list[dict[str, str]]] = TTLCache(
+    ttl_seconds=SECONDS_PER_DAY, max_entries=1
+)
+
+
+def get_catalogue() -> dict[str, FlowInfo]:
+    """
+    Return ILOSTAT's dataflow catalogue (flow ID -> FlowInfo, in ORDER rank).
+
+    Downloaded on first use and refreshed after 24 hours.
+    Raises RuntimeError (plain English) if the download fails.
+    """
+    return _catalogue.get_or_fetch(_ALL, sdmx_client.get_catalogue)
+
+
+def known_last_updated(flow_id: str) -> str | None:
+    """
+    Return a flow's last_updated if the catalogue is already in memory.
+
+    Never downloads anything: returns None when the catalogue is not cached,
+    so data calls do not pay the catalogue's download time.
+    """
+    catalogue = _catalogue.peek(_ALL)
+    flow = catalogue.get(flow_id) if catalogue is not None else None
+    return flow.last_updated if flow is not None else None
 
 
 def get_cached_countries() -> list[dict[str, str]]:
-    """Return CL_AREA country list, cached for the lifetime of the process."""
-    global _countries_cache
-    if _countries_cache is None:
-        _countries_cache = sdmx_client.get_countries()
-    return _countries_cache
+    """
+    Return the CL_AREA country list ({code, name}), refreshed after 24 hours.
+
+    Raises RuntimeError (plain English) if the download fails.
+    """
+    return _countries.get_or_fetch(_ALL, sdmx_client.get_countries)
 
 
 # ── Resource handler functions (registered in server.py) ─────────────────────
@@ -80,32 +95,35 @@ regional aggregates.
 4. Apply derived stats if the user asked for a trend or change rate
 
 ## Reading tool responses
-Every data response (get_time_series, get_yoy_change, get_cagr, get_trend) returns
-a metadata object as its first element. Always check these fields before answering:
+Every data response returns a metadata object as its first element:
 
-- **_is_modelled**: if true, this is an ILO modelled/imputed estimate, not a national
-  survey result. Flag this to the user — modelled estimates fill gaps but are less
-  reliable than survey data.
-- **_unit_measure**: the unit the values are in (e.g. "%", "USD", "EUR"). Always state
-  this when reporting a result. For wage comparisons across countries, state each
-  country's unit explicitly — they will differ if one uses LCU and another USD.
-- **_coverage_end**: the latest year the data actually reaches. If this is earlier than
-  the user's requested end year, say so plainly — e.g. "data is only available through
-  2022 in this dataflow; 2023-2025 are not yet published." Do not silently return a
-  shorter range without explaining why.
-- **_coverage_start**: the earliest available year. If the user asked for years before
-  this, explain the data does not go back that far.
-- **_missing_years**: gaps within the available range. Name them explicitly.
+- **_is_modelled**: true = ILO modelled estimate, not survey data. Always flag this.
+- **_unit_measure**: unit of the values (e.g. "%", "EUR"). State it in every response.
+- **_currency_code**: ISO currency for wage flows (e.g. "THB", "NGN"). Name the currency
+  explicitly in all wage responses; for cross-country comparisons, state both currencies
+  before drawing conclusions — FX movements can flip the winner.
+- **_coverage_end**: latest year available. Always state "data through [year]";
+  if earlier than requested, explain the gap.
+- **_coverage_start** / **_missing_years**: explain if the user's range isn't
+  fully covered.
 
 ## Rules
-- Never answer a labour statistics question from training knowledge. If a tool
-  returns no data, say so — do not invent numbers.
+- Never answer from training knowledge. No data → say so, do not invent numbers.
 - Resolve country ambiguity before calling any tool. "Korea" → ask which one.
-- Prefer flows where is_modelled is false (survey data). If multiple flows match a
-  keyword, prefer the one for the most current ICLS standard. When in doubt, call
-  get_indicator_metadata to confirm what each flow measures before choosing.
-- Wages are in local currency units (LCU) by default. Do not convert unless asked.
-  When comparing wages across countries in LCU, always state each country's currency.
-- In time-series results, obs_status "B" means a methodology break at that point.
-  Do not state a multi-year trend that spans a break without flagging it.
+- Prefer survey flows (is_modelled: false). When multiple flows match, prefer the most
+  current ICLS standard.
+- Wages are in local currency by default. Do not convert unless asked.
+- **_breaks** lists methodology breaks: years where the survey changed or was
+  redesigned, so values before and after are not directly comparable. Each has
+  `reasons`: "ilostat_break_flag" (ILOSTAT marked it, obs_status "B") and/or
+  "source_change" (the survey source changed). Never state a trend across a
+  break without flagging it.
+- For youth unemployment, age_group='youth' only works in flows with youth age codes. If
+  it returns empty, use search_indicators('youth unemployment') to find the right flow
+  (e.g. DF_UNE_3EAP_SEX_AGE_GEO_RT).
+- If a result diverges from a manual ILOSTAT Data Explorer check, the most likely causes
+  are: different age/sex filter, a currency view mismatch, or a different ICLS-standard
+  flow selected in the Data Explorer. Check these before assuming a connector error.
+- For CAGR and trend answers, always state both endpoints:
+  "4.2% CAGR from 2015 to 2022".
 """

@@ -11,10 +11,13 @@ MCP 1.29.1 requires structured_content.result to be an array, so only list
 return types work with FastMCP 3.x.
 """
 
+from datetime import date
 from unittest.mock import patch
 
+import pandas as pd
 import pytest
 
+from ilostat_mcp import validation
 from ilostat_mcp.server import (
     get_cagr,
     get_countries,
@@ -29,8 +32,9 @@ from ilostat_mcp.server import (
 _UNEMPLOYMENT_FLOW = "DF_UNE_DEAP_SEX_AGE_RT"
 _WAGE_FLOW = "DF_EAR_EMTA_SEX_CUR_NB"
 _GEO_FLOW = "DF_UNE_3EAP_SEX_AGE_GEO_RT"  # youth unemployment with GEO dimension
+_DSB_FLOW = "DF_UNE_3EAP_SEX_AGE_DSB_RT"  # youth unemployment by disability status
 _REQUIRED_SEARCH_KEYS = {"id", "title", "is_modelled"}
-_REQUIRED_METADATA_KEYS = {"id", "title", "description", "is_modelled"}
+_REQUIRED_METADATA_KEYS = {"id", "title", "description", "is_modelled", "last_updated"}
 _REQUIRED_TS_KEYS = {"time_period", "value", "obs_status"}
 
 
@@ -46,6 +50,14 @@ class TestSearchIndicators:
     def test_is_modelled_is_bool(self):
         result = search_indicators("unemployment")
         assert all(isinstance(d["is_modelled"], bool) for d in result)
+
+    @pytest.mark.timeout(30)
+    def test_results_capped_at_20(self):
+        assert len(search_indicators("unemployment")) <= 20
+
+    @pytest.mark.timeout(30)
+    def test_no_match_returns_empty_list(self):
+        assert search_indicators("xyzzy_no_such_indicator_ever") == []
 
 
 class TestGetCountries:
@@ -102,6 +114,19 @@ class TestGetTimeSeries:
         assert all("unit_measure" in row for row in data_rows)
 
     @pytest.mark.timeout(30)
+    def test_wage_flow_metadata_has_currency_code(self):
+        # Wage flows must surface the ISO currency code so the agent can name it
+        result = get_time_series(_WAGE_FLOW, "FRA", "2021", "2021")
+        meta = result[0]
+        assert meta["_currency_code"] == "EUR"
+
+    @pytest.mark.timeout(30)
+    def test_unemployment_flow_has_no_currency_code(self):
+        # Non-wage flows should return None for _currency_code
+        result = get_time_series(_UNEMPLOYMENT_FLOW, "DEU", "2022", "2022")
+        assert result[0]["_currency_code"] is None
+
+    @pytest.mark.timeout(30)
     def test_youth_age_group_returns_different_values_than_total(self):
         # ZAF youth unemployment (GEO flow) — adult total AGE code absent, youth present
         total = get_time_series(_GEO_FLOW, "ZAF", "2022", "2022", age_group="total")
@@ -109,6 +134,39 @@ class TestGetTimeSeries:
         assert len(youth[1:]) == 1, "Youth should return 1 data row (GEO_COV_NAT)"
         assert len(total[1:]) == 0, "Adult total AGE not available in GEO flow"
         assert youth[1]["value"] > 40, "ZAF youth unemployment >40%"
+
+    @pytest.mark.timeout(30)
+    def test_disability_flow_youth_returns_one_row_per_year(self):
+        # Without the DSB filter this flow returned 8-11 mixed rows per year.
+        result = get_time_series(_DSB_FLOW, "NGA", "2011", "2024", age_group="youth")
+        years = [row["time_period"] for row in result[1:]]
+        assert years, "Expected NGA youth data in the disability flow"
+        assert len(years) == len(set(years)), f"Duplicate years: {years}"
+
+    @pytest.mark.timeout(30)
+    def test_disability_flow_total_has_no_data(self):
+        # Youth-only flow: there is no adult-total series to return.
+        result = get_time_series(_DSB_FLOW, "NGA", "2011", "2024")
+        assert len(result) == 1
+        assert result[0]["_no_data_reason"]
+
+    def test_several_rows_per_year_raises_instead_of_mixing(self):
+        mixed = pd.DataFrame(
+            {
+                "time_period": ["2020", "2020"],
+                "value": [5.0, 9.0],
+                "source": ["LFS"] * 2,
+            }
+        )
+        with (
+            patch(
+                "ilostat_mcp.resources.get_cached_countries",
+                return_value=[{"code": "DEU", "name": "Germany"}],
+            ),
+            patch("ilostat_mcp.sdmx_client.get_time_series", return_value=mixed),
+            pytest.raises(RuntimeError, match="several rows per year"),
+        ):
+            get_time_series(_UNEMPLOYMENT_FLOW, "DEU", "2020", "2020")
 
     def test_invalid_age_group_raises(self):
         with pytest.raises(ValueError, match="age_group"):
@@ -388,3 +446,43 @@ class TestLaborMarketSnapshot:
         ):
             result = labor_market_snapshot("Germany")
         assert "DEU" in result
+
+    def test_all_unresolved_countries_reported_together(self):
+        with (
+            patch(
+                "ilostat_mcp.resources.get_cached_countries",
+                return_value=_MOCK_COUNTRIES,
+            ),
+            pytest.raises(ValueError) as exc_info,
+        ):
+            labor_market_snapshot("Narnia, Korea")
+        message = str(exc_info.value)
+        assert "'Narnia' did not match" in message
+        assert "'Korea' is ambiguous" in message
+
+
+# ── Validation ────────────────────────────────────────────────────────────────
+
+
+class _FakeDate(date):
+    @classmethod
+    def today(cls) -> "_FakeDate":
+        return cls(2031, 1, 2)
+
+
+class TestValidateYear:
+    def test_upper_bound_is_read_at_call_time(self):
+        # A server started in 2030 must accept 2031 once the year turns.
+        with patch.object(validation, "date", _FakeDate):
+            validation.validate_year("year", "2031", _UNEMPLOYMENT_FLOW)
+
+    def test_year_after_current_year_raises(self):
+        with (
+            patch.object(validation, "date", _FakeDate),
+            pytest.raises(ValueError, match="between 1983 and 2031"),
+        ):
+            validation.validate_year("year", "2032", _UNEMPLOYMENT_FLOW)
+
+    def test_year_before_flow_minimum_raises(self):
+        with pytest.raises(ValueError, match="between 2000"):
+            validation.validate_year("year", "1999", _WAGE_FLOW)

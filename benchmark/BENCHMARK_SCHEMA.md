@@ -10,7 +10,7 @@ a failure mode no other public data MCP explicitly tests for.
 | Category | Definition |
 |---|---|
 | `answerable_clean` | Real data exists, no break in the requested range |
-| `answerable_break` | Real data exists, but a methodology break (SOURCE change or OBS_PRE_BREAK_VALUE) falls inside the requested range |
+| `answerable_break` | Real data exists, but a methodology break (ILOSTAT `B` flag or SOURCE change) falls inside the requested range |
 | `unanswerable_no_data` | No data exists for this country/indicator/period combination |
 | `unanswerable_wrong_entity` | Category error — asks for something ILOSTAT doesn't track, or confuses the entity type |
 | `ambiguous` | Entity name collides with something else (e.g. "Georgia" country vs. US state) |

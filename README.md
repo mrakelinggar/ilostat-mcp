@@ -4,44 +4,30 @@ MCP server giving AI agents access to ILOSTAT employment and wage data, with aut
 
 ## Installation
 
-### Option 1 — directly from GitHub (no manual install)
-
-Add this to your MCP client config. For Claude Desktop, edit `claude_desktop_config.json`:
+Requires [uv](https://docs.astral.sh/uv/getting-started/installation/). Add this to your MCP client config. For Claude Desktop, edit `claude_desktop_config.json` (Settings → Developer → Edit Config):
 
 ```json
 {
   "mcpServers": {
     "ilostat-mcp": {
       "command": "uvx",
-      "args": ["--from", "git+https://github.com/mrakelinggar/ilostat-mcp", "ilostat-mcp"]
+      "args": ["ilostat-mcp"]
     }
   }
 }
 ```
 
-`uvx` fetches and installs the package from GitHub automatically. Restart Claude Desktop after editing the config.
+Restart Claude Desktop. `uvx` downloads the package from PyPI and runs it — no separate install step. Confirm **ilostat-mcp** appears in the tools panel before running queries.
 
-### Option 2 — install from source
+If Claude Desktop reports that `uvx` cannot be found, replace `"uvx"` with its full path (run `which uvx` on macOS/Linux or `where uvx` on Windows). Desktop apps do not always see the same PATH as your terminal.
+
+### Alternative — pip
 
 ```bash
-git clone https://github.com/mrakelinggar/ilostat-mcp
-cd ilostat-mcp
-pip install .
+pip install ilostat-mcp
 ```
 
-This installs an `ilostat-mcp` command into your Python environment. Then add it to your config:
-
-```json
-{
-  "mcpServers": {
-    "ilostat-mcp": {
-      "command": "ilostat-mcp"
-    }
-  }
-}
-```
-
-Restart Claude Desktop after editing the config. Confirm **ilostat-mcp** appears in the tools panel before running queries.
+Then use `"command": "ilostat-mcp"` (no `args`) in the config above.
 
 ## Tools
 
@@ -57,21 +43,25 @@ Restart Claude Desktop after editing the config. Confirm **ilostat-mcp** appears
 
 ## Methodology-break detection
 
-Every `get_time_series` call automatically checks for SOURCE attribute changes and `OBS_PRE_BREAK_VALUE` flags. When `get_cagr` or `get_trend` detects a break inside the requested range, it warns or refuses to compute — a trend line through a methodology break is a wrong number that looks right.
+Every `get_time_series` call automatically checks two signals: ILOSTAT's own break flag (`obs_status = "B"`, which catches survey redesigns that keep the same name) and changes in the survey source. Each break lists which signal found it. When a break falls inside the range of `get_yoy_change`, `get_cagr` or `get_trend`, the result carries a `_break_warning` — a trend line through a methodology break is a wrong number that looks right.
 
-Example:
+Example — `get_cagr("DF_UNE_DEAP_SEX_AGE_RT", "AUS", "2015", "2020")`. ILOSTAT flags a break in Australia's series in 2018, but the survey name is the same on both sides, so a source comparison alone would miss it:
 
+```json
+"_breaks": [{"year": "2018",
+             "source_before": "LFS - Labour Force Survey",
+             "source_after": "LFS - Labour Force Survey",
+             "reasons": ["ilostat_break_flag"]}],
+"_break_warning": "Methodology break within 2015-2020 at 2018 (ILOSTAT flags a break in series). Values across a methodology break are not directly comparable — interpret this result with caution."
 ```
-Warning: methodology break detected in 2019.
-SOURCE changed from "LFS – Labour Force Survey" to "Administrative records"
-— the survey source changed mid-series, so the numbers aren't comparable.
 
-CAGR not computed. Use get_time_series to inspect each sub-series separately.
-```
+## Data freshness
+
+Everything comes from ILOSTAT's live SDMX API and is kept in memory for up to 24 hours, so repeated questions don't re-download the same data. An answer can therefore be up to 24 hours behind the live site; restarting the server always fetches fresh. Nothing is stored on disk.
 
 ## Benchmark
 
-A hallucination benchmark comparing bare-LLM vs. MCP-equipped agent answers across 30+ questions with ground truth pulled from the live ILOSTAT API. Results in [`benchmark/`](benchmark/).
+A hallucination benchmark comparing bare-LLM vs. MCP-equipped agent answers across 30+ questions with ground truth pulled from the live ILOSTAT API. Results in [`benchmark/`](https://github.com/mrakelinggar/ilostat-mcp/tree/main/benchmark).
 
 ## Development
 
@@ -85,6 +75,10 @@ uv run mypy src/                    # type check
 
 CI runs on every push: lint → type check → tests.
 
+## Acknowledgements
+
+Benchmark ground truth verified against live ILOSTAT data by Kanza Nabeela Puteri.
+
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — see [LICENSE](https://github.com/mrakelinggar/ilostat-mcp/blob/main/LICENSE).

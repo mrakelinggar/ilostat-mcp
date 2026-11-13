@@ -15,6 +15,7 @@ import pytest
 
 from ilostat_mcp.indicators import AGE_TOTAL, CUR_DEFAULT, FLOWS
 from ilostat_mcp.sdmx_client import get_time_series
+from ilostat_mcp.tools import series
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -23,11 +24,29 @@ def prewarm_dsd_cache():
     # One small request per flow is enough to populate the DSD cache.
     # Failures here are non-fatal — individual tests will handle API errors.
     prewarm_calls = [
-        (FLOWS["unemployment_rate"], "DEU", "2023", "2023", {"age": AGE_TOTAL}),
-        (FLOWS["wages"], "DEU", "2023", "2023", {"cur": CUR_DEFAULT}),
+        (
+            FLOWS["unemployment_rate"],
+            "DEU",
+            "2023",
+            "2023",
+            {"dims": {"AGE": AGE_TOTAL}},
+        ),
+        (FLOWS["wages"], "DEU", "2023", "2023", {"dims": {"CUR": CUR_DEFAULT}}),
     ]
     for flow_id, country, start, end, kwargs in prewarm_calls:
         try:
             get_time_series(flow_id, country, start, end, **kwargs)
         except Exception:
             pass  # Cache pre-warm is best-effort; tests fail if API is down
+
+
+@pytest.fixture(autouse=True)
+def _empty_series_cache():
+    """Start every test with no cached series.
+
+    Several tests mock sdmx_client.get_time_series; without this, a series
+    cached by an earlier live test would be served instead of the mock (or a
+    mocked series would leak into a later live test). The catalogue and
+    country caches are left warm: tests that fake them patch the accessor.
+    """
+    series._series.clear()
