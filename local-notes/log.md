@@ -21,6 +21,20 @@ are deferred.
 - Author on PyPI: Rake Anggoro. README credits Kanza Nabeela Puteri for
   benchmark ground truth (Acknowledgements).
 - Public repo `main` now requires a PR, except for the owner.
+- **README rewritten** for non-developers: demo GIF (`docs/demo.gif`, recorded in
+  Claude Desktop — Japan clean series, Australia 2018 break), step-by-step install,
+  example questions verified against live data. Released as `0.1.0.post1`
+  (same code, new PyPI page).
+- **Hosting tried and deferred.** Fly.io: no free tier for new accounts. Prefect
+  Horizon (FastMCP's hosting): free tier deploys fine but requires login, gives
+  no access to other users, and Claude Desktop's "Add custom connector" fails
+  with every option (its two login-settings files name different login servers,
+  a likely cause). Claude Desktop's config file only accepts local programs,
+  not URLs. Distribution is PyPI only for now.
+- Claude Desktop's config is now at Settings → Desktop app → Extensions →
+  Manage → Edit Config (older versions: Settings → Developer).
+- Indonesia unemployment finding (BPS vs ILOSTAT move in opposite directions
+  in 2024 because of definitions) saved in learnings/WRITING_MATERIALS.md.
 
 **Release steps from now on:** bump the version, run `uv lock`, commit, push to
 origin, do the publish-branch procedure, then `git tag vX.Y.Z && git push public

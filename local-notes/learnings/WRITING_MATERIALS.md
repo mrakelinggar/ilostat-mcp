@@ -146,3 +146,28 @@ provable (scan + JSON), specific (one heuristic, one dataset, one fix).
 - Note which phase it can be written after — ideas are only as good as the
   implementation behind them
 - One idea per section, enough detail to reconstruct the angle cold
+
+---
+
+## Indonesia's unemployment fell in 2024. It also rose by 840,000. (2026-11-13)
+
+**Hook:** Same survey, same year, two official numbers moving in opposite
+directions — the difference is who you count as unemployed.
+
+**What makes it substantive:**
+- BPS (Indonesia's statistics agency) reported unemployment falling: 5.32% →
+  4.91% (Aug 2023 → Aug 2024), and to 4.75% in Aug 2026.
+- ILOSTAT, built from the same BPS labour force survey (Sakernas), shows the
+  strict international measure *rising*: 4.89 M → 5.73 M unemployed, 3.42% →
+  3.85% (2023 → 2024).
+- ILOSTAT's "potential labour force" (want work but don't meet the strict
+  definition) fell 7.16 M → 6.13 M, and the broad LU3 rate fell 8.04% → 7.65% —
+  the same direction as BPS. People moved across the definitional line.
+- BPS counts discouraged job seekers and future starters as unemployed; the
+  international definition does not. Same release also showed women's
+  unemployment and informal work rising.
+- Lesson for any data tool: "comparable-looking" numbers often aren't; a
+  methodology or definition difference can flip the direction, not just the level.
+
+**Before publishing, verify:** how BPS categories map to ILOSTAT's potential
+labour force; whether ILOSTAT's annual figure is the August round or an average.

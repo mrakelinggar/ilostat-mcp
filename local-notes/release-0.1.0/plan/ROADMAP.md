@@ -382,7 +382,9 @@ Execution notes: `execution/phase05/`
 
 Outputs:
 
-**6a — Remote hosting (Fly.io)**
+**6a — Remote hosting — DEFERRED (2026-11-13).** No free option lets other people connect: Fly.io has no free tier, Horizon's free tier is personal-only and failed to add as a Claude Desktop connector. Revisit if users ask for a URL.
+
+~~Remote hosting (Fly.io)~~
 - `fly.toml` + `Dockerfile` — Fly.io deployment config
 - FastMCP HTTP/SSE transport wired alongside existing stdio (both work; stdio for
   local installs, HTTP for remote). No behavior change to tools or tests.
@@ -392,8 +394,7 @@ Outputs:
 - Optional: CD workflow in GitHub Actions to redeploy on version tag push
 
 **6b — Distribution**
-- `smithery.yaml` — remote URL as primary transport; stdio as fallback for local
-  installs. Smithery generates `npx @smithery/cli install ilostat-mcp` for users.
+- ~~`smithery.yaml`~~ — dropped: Smithery closed publishing on 2026-10-31.
 - PyPI publish — configure Trusted Publishing on PyPI, push `v0.1.0` tag
 - `README.md` — two install paths: (1) Smithery one-liner, (2) manual `uvx` + JSON
   config. Includes benchmark results table.
