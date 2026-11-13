@@ -1,10 +1,12 @@
 # ilostat-mcp
 
-MCP server giving AI agents access to ILOSTAT employment and wage data, with automatic methodology-break detection.
+MCP server that gives AI assistants such as Claude live access to [ILOSTAT](https://ilostat.ilo.org/) — the International Labour Organization's statistics database — for employment and wage data, with automatic detection of methodology breaks (points where a country changed how it measures a statistic, so values before and after aren't directly comparable).
+
+![Demo: Claude Desktop answering two questions with ilostat-mcp — a clean series for Japan, and an Australian series with a 2018 methodology break](https://raw.githubusercontent.com/mrakelinggar/ilostat-mcp/main/docs/demo.gif)
 
 ## Installation
 
-Requires [uv](https://docs.astral.sh/uv/getting-started/installation/). Add this to your MCP client config. For Claude Desktop, edit `claude_desktop_config.json` (Settings → Developer → Edit Config):
+Requires [uv](https://docs.astral.sh/uv/getting-started/installation/). Add this to your MCP client config. For Claude Desktop, edit `claude_desktop_config.json` (on macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`):
 
 ```json
 {
@@ -17,7 +19,7 @@ Requires [uv](https://docs.astral.sh/uv/getting-started/installation/). Add this
 }
 ```
 
-Restart Claude Desktop. `uvx` downloads the package from PyPI and runs it — no separate install step. Confirm **ilostat-mcp** appears in the tools panel before running queries.
+Quit and reopen Claude Desktop. `uvx` downloads the package from PyPI and runs it — no separate install step.
 
 If Claude Desktop reports that `uvx` cannot be found, replace `"uvx"` with its full path (run `which uvx` on macOS/Linux or `where uvx` on Windows). Desktop apps do not always see the same PATH as your terminal.
 
@@ -29,23 +31,29 @@ pip install ilostat-mcp
 
 Then use `"command": "ilostat-mcp"` (no `args`) in the config above.
 
-## Tools
+## Try asking
 
-| Tool | Purpose |
-|---|---|
-| `search_indicators(keyword)` | Find ILOSTAT dataflows by keyword. Dataflow IDs act as filters (per country, age, sex) rather than a flat indicator list, so this searches titles and descriptions. |
-| `get_countries()` | List valid country codes from the `CL_AREA` codelist. |
-| `get_indicator_metadata(dataflow_id)` | Definition, units, source, and last-updated date for a dataflow. |
-| `get_time_series(dataflow_id, country, start, end)` | Raw data pull. Always includes a `_breaks` field — every series comes with its break status. |
-| `get_yoy_change(dataflow_id, country, year)` | Year-over-year % change. |
-| `get_cagr(dataflow_id, country, start, end)` | Compound annual growth rate. Warns or refuses if the range spans a detected methodology break. |
-| `get_trend(dataflow_id, country, start, end)` | Linear trend and slope. Same break-spanning rule as `get_cagr`. |
+- *How did Japan's unemployment rate change between 2015 and 2023?*
+- *What was the trend in Australia's unemployment rate from 2015 to 2020?* — the answer should flag ILOSTAT's 2018 methodology break.
+- *Compare unemployment in Germany and Canada from 2015 to 2023.*
+- *What were average monthly earnings in Brazil in 2022?*
+
+## What it can do
+
+Claude picks the right tools automatically; you only ask the question.
+
+- **Find indicators** — search ILOSTAT's employment and wage datasets by keyword (matches dataset titles), and look up definitions, units and last-updated dates.
+- **Fetch time series** — annual data for any country, with methodology breaks always reported alongside the numbers.
+- **Derived statistics** — year-over-year change, compound annual growth rate (CAGR) and linear trend. If a methodology break falls inside the requested range, the result carries a warning.
+- **Labour market snapshot** — a ready-made prompt that summarises the labour market for one to three countries.
+
+Coverage is ILOSTAT's employment and wage themes only. When ILOSTAT has no data for a question, the server says so explicitly rather than returning an empty or estimated number.
 
 ## Methodology-break detection
 
-Every `get_time_series` call automatically checks two signals: ILOSTAT's own break flag (`obs_status = "B"`, which catches survey redesigns that keep the same name) and changes in the survey source. Each break lists which signal found it. When a break falls inside the range of `get_yoy_change`, `get_cagr` or `get_trend`, the result carries a `_break_warning` — a trend line through a methodology break is a wrong number that looks right.
+Every time series is checked for two signals: ILOSTAT's own break flag (`obs_status = "B"`, which catches survey redesigns that keep the same name) and changes in the survey source. Each break lists which signal found it. When a break falls inside the range of a year-over-year, CAGR or trend calculation, the result carries a `_break_warning` — a trend line through a methodology break is a wrong number that looks right.
 
-Example — `get_cagr("DF_UNE_DEAP_SEX_AGE_RT", "AUS", "2015", "2020")`. ILOSTAT flags a break in Australia's series in 2018, but the survey name is the same on both sides, so a source comparison alone would miss it:
+Example — CAGR of Australia's unemployment rate, 2015–2020. ILOSTAT flags a break in 2018, but the survey name is the same on both sides, so a source comparison alone would miss it:
 
 ```json
 "_breaks": [{"year": "2018",
@@ -77,7 +85,7 @@ CI runs on every push: lint → type check → tests.
 
 ## Acknowledgements
 
-Benchmark ground truth verified against live ILOSTAT data by Kanza Nabeela Puteri.
+Thanks to [Kanza Nabeela Puteri](mailto:kanzanabeela@gmail.com) for brainstorming input on the server's workflow and for verifying the benchmark ground truth against live ILOSTAT data.
 
 ## License
 
